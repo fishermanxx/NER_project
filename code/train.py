@@ -3,6 +3,7 @@ from utils import KGDataLoader, Batch_Generator
 from utils import show_metadata, show_dict_info
 # from ent_model import BLSTM_CRF
 from ent_model_dropout import BLSTM_CRF
+from model_bert_lstm_crf import BERT_LSTM_CRF
 
 from common import get_logger, Timer
 
@@ -106,8 +107,8 @@ def _train(mymodel, args, data_loader, train_dataset=None, eval_dataset=None, RE
 
     if use_cuda:
         hyper_param = {
-            'EPOCH': 45,         #45
-            'batch_size': 256,    #512
+            'EPOCH': 40,         #45
+            'batch_size': 128,    #512
             'learning_rate': 1e-2,
             'visualize_length': 2, #10
             'isshuffle': True,
@@ -211,8 +212,8 @@ def main():
 
     ## Reload model
     model_params = {
-        'embedding_dim' : 64,
-        'hidden_dim' : 128,
+        'embedding_dim' : 768,
+        'hidden_dim' : 64,
         'n_tags' : len(data_loader.ent_seq_map_dict),
         'n_words' : len(data_loader.character_location_dict),
         'start_idx': data_loader.ent_seq_map_dict[data_loader.START_TAG],  ## <start> tag index for entity tag seq
@@ -221,7 +222,8 @@ def main():
         'dropout_prob': 0.05,
         'lstm_layer_num': 1
     }
-    mymodel = BLSTM_CRF(model_params, show_param=True)
+    # mymodel = BLSTM_CRF(model_params, show_param=True)   
+    mymodel = BERT_LSTM_CRF(model_params, show_param=True) 
 
     if args.use_cuda:
         train_dataset = dataset.train_dataset
