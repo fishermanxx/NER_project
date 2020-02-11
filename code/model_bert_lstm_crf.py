@@ -391,7 +391,7 @@ class BERT_LSTM_CRF(nn.Module):
         '''
         build the embedding layer, lstm layer and CRF layer
         '''
-        self.word_embeds = nn.Embedding(self.n_words, self.embedding_dim)
+        # self.word_embeds = nn.Embedding(self.n_words, self.embedding_dim)
         self.lstm = nn.LSTM(self.embedding_dim, self.hidden_dim//2, batch_first=True, num_layers=self.lstm_layer_num, dropout=self.dropout_prob, bidirectional=True)
         self.hidden2tag = nn.Linear(self.hidden_dim, self.n_tags)
         crf_params = {'n_tags':self.n_tags, 'start_idx':self.start_idx, 'end_idx':self.end_idx, 'use_cuda':self.use_cuda}
@@ -401,7 +401,7 @@ class BERT_LSTM_CRF(nn.Module):
         self.bert = transformers.BertModel.from_pretrained('bert-base-chinese')
 
     def reset_parameters(self):        
-        I.xavier_normal_(self.word_embeds.weight.data)
+        # I.xavier_normal_(self.word_embeds.weight.data)
         self.lstm.reset_parameters()
         # stdv = 1.0 / math.sqrt(self.hidden_dim)
         # for weight in self.lstm.parameters():
@@ -421,9 +421,9 @@ class BERT_LSTM_CRF(nn.Module):
         use_cuda = self.use_cuda if use_cuda is None else use_cuda
         batch_size, T = x.shape
         ##embedding layer
+
         words_tensor = self._to_tensor(x, use_cuda)  #(batch_size, T)
         # embeds = self.word_embeds(words_tensor)  #(batch_size, T, n_embed)
-
         lens = self._to_tensor(lens)
         att_mask = self._generate_mask(lens, max_len=T).cuda()
         embeds = self.bert(words_tensor, attention_mask=att_mask)[0]  #(batch_size, T, n_embed)
@@ -475,6 +475,7 @@ class BERT_LSTM_CRF(nn.Module):
             @paths: (batch_size, T+1), torch.tensor, 最佳句子路径
             @scores: (batch_size), torch.tensor, 最佳句子路径上的得分
         '''
+        # self.eval()
         use_cuda = self.use_cuda if use_cuda is None else use_cuda
         logits = self._get_lstm_features(x, lens, use_cuda)
         scores, paths = self.crf.viterbi_decode(logits, lens, use_cuda)
@@ -512,7 +513,9 @@ class BERT_LSTM_CRF(nn.Module):
         use_cuda = self.use_cuda if use_cuda is None else use_cuda
         EPOCH = hyper_param.get('EPOCH', 3)
         BATCH_SIZE = hyper_param.get('batch_size', 4)
-        LEARNING_RATE = hyper_param.get('learning_rate', 1e-2)
+        # LEARNING_RATE = hyper_param.get('learning_rate', 1e-2)
+        LEARNING_RATE = 1e-2
+        print(f'learning_rate: {LEARNING_RATE}')
         visualize_length = hyper_param.get('visualize_length', 10)
         result_dir = hyper_param.get('result_dir', './result/')
         model_name = hyper_param.get('model_name', 'model.p')
@@ -521,6 +524,7 @@ class BERT_LSTM_CRF(nn.Module):
         
 
         train_dataset = data_loader.dataset.train_dataset if train_dataset is None else train_dataset
+        # train_data_mat_dict = data_loader.transform(train_dataset, data_type=DATA_TYPE)
 
         ## 保存预处理的文本，这样调参的时候可以直接读取，节约时间   *WARNING*
         old_train_dict_path = os.path.join(result_dir, 'train_data_mat_dict.pkl')
@@ -533,7 +537,19 @@ class BERT_LSTM_CRF(nn.Module):
         ## 保存预处理的文本，这样调参的时候可以直接读取，节约时间   *WARNING*
 
         data_generator = Batch_Generator(train_data_mat_dict, batch_size=BATCH_SIZE, data_type=DATA_TYPE, isshuffle=is_shuffle)
-        optimizer = torch.optim.Adam(self.parameters(), lr=LEARNING_RATE, weight_decay=1e-5)
+
+        crf_param = list(self.crf.parameters())
+        fc_param = list(self.hidden2tag.parameters())
+        lstm_param = list(self.lstm.parameters())
+        bert_param = list(self.bert.parameters())
+
+        # optimizer = torch.optim.Adam(self.parameters(), lr=LEARNING_RATE)
+
+        optimizer = torch.optim.Adam(crf_param+fc_param+lstm_param, lr=LEARNING_RATE)
+        # optimizer_group_paramters = [
+        #     {'param': crf_param + fc_param + lstm_param, 'lr': LEARNING_RATE}, 
+        #     {'param': bert_param, 'lr': 5e-5}
+        # ]
 
         if use_cuda:
             print('use cuda=========================')
@@ -570,16 +586,20 @@ class BERT_LSTM_CRF(nn.Module):
                     log(f'[TRAIN] step: {(cnt+1)*BATCH_SIZE}/{all_cnt} | loss: {loss_cur:.4f}', 1)
                     loss = 0.0
 
+                    # self.eval()
+                    # print(data_list[0]['input'])
+                    # pre_paths, pre_scores = self._output(x, lens)
+                    # print('predict-path')
+                    # print(pre_paths[0])
+                    # print('target-path')
+                    # print(y_ent[0])
+                    # self.train()                    
+
                 if cnt+1 % 100 == 0:
                     save_path = os.path.join(result_dir, model_name)
                     self.save_model(save_path)
                     print('Checkpoint saved successfully')
-                #     print(data_list[0]['input'])
-                #     pre_paths, pre_scores = self._output(x, lens)
-                #     print('predict-path')
-                #     print(pre_paths[0])
-                #     print('target-path')
-                #     print(y_ent[0])
+
             save_path = os.path.join(result_dir, model_name)
             self.save_model(save_path)
             print('Checkpoint saved successfully')
@@ -615,10 +635,9 @@ class BERT_LSTM_CRF(nn.Module):
         result_dir = hyper_param.get('result_dir', './result/')
         DATA_TYPE = 'ent'
 
-        if data_set is None:
-            test_dataset = data_loader.dataset.test_dataset
-        else:
-            test_dataset = data_set
+        
+        test_dataset = data_loader.dataset.test_dataset if data_set is None else data_set
+        # test_data_mat_dict = data_loader.transform(test_dataset, istest=True, data_type=DATA_TYPE)
 
         ## 保存预处理的文本，这样调参的时候可以直接读取，节约时间   *WARNING*
         old_test_dict_path = os.path.join(result_dir, 'test_data_mat_dict.pkl')
@@ -773,3 +792,51 @@ class BERT_LSTM_CRF(nn.Module):
         lens_exp = lens.unsqueeze(1).expand_as(ranges)  #(batch_size, max_len)
         mask = ranges < lens_exp
         return mask
+
+
+
+if __name__ == '__main__':
+    model_params = {
+        'embedding_dim' : 768,
+        'hidden_dim' : 64,
+        'n_tags' : 45,
+        'n_words' : 22118,
+        'start_idx': 43,  ## <start> tag index for entity tag seq
+        'end_idx': 44,  ## <end> tag index for entity tag seq
+        'use_cuda':True,
+        'dropout_prob': 0,
+        'lstm_layer_num': 1,
+        'num_labels': 45
+    }
+    
+    mymodel = BERT_LSTM_CRF(model_params, show_param=True) 
+ 
+    all_param = list(mymodel.named_parameters())
+    crf_param = list(mymodel.crf.named_parameters())
+    lstm_param = list(mymodel.lstm.named_parameters())
+    fc_param = list(mymodel.hidden2tag.named_parameters())
+    bert_param = list(mymodel.bert.named_parameters())
+    # emb_param = list(mymodel.word_embeds.named_parameters())
+
+    # print(f'emb_param: {len(emb_param)}')
+    print(f'crf_param: {len(crf_param)}')
+    print(f'lstm_param: {len(lstm_param)}')
+    print(f'fc_param: {len(fc_param)}')
+    print(f'bert_param: {len(bert_param)}')
+    print('='*50)
+    print(f'all_param: {len(all_param)}')
+    print(len(all_param))
+    for i in range(len(all_param)):
+        print(all_param[i][0], all_param[i][1].shape)
+
+    no_decay = ['bias', 'reverse']
+    # choose_param = [p for n, p in lstm_param if not any(nd in n for nd in no_decay)]
+    # choose_param = [np for np in lstm_param if not any(nd in np[0] for nd in no_decay)]
+    # choose_param = [np for np in lstm_param if 'bias' in np[0]]
+    choose_param = [np for np in lstm_param if any(nd in np[0] for nd in no_decay)]
+    for name, param in lstm_param:
+        print(name, param.shape, id(param))
+
+    print('='*50)
+    for name, param in choose_param:
+        print(name, param.shape, id(param))

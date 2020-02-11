@@ -123,9 +123,11 @@ class BERT_MLP(nn.Module):
             @x: index之后的word, 每个字符按照字典对应到index, (batch_size, T), np.array
             @lens: (batch_size), list, 具体每个句子的长度, 
         :return 
-            @paths: (batch_size, T+1), torch.tensor, 最佳句子路径
+            @paths: (batch_size, T), torch.tensor, 最佳句子路径
             @scores: (batch_size), torch.tensor, 最佳句子路径上的得分
         '''
+
+        self.eval()
         use_cuda = self.use_cuda if use_cuda is None else use_cuda
         T = x.shape[1]
 
@@ -155,7 +157,6 @@ class BERT_MLP(nn.Module):
         else:
             pass
 
-
     def train_model(self, data_loader: KGDataLoader, train_dataset=None, eval_dataset=None, hyper_param={}, use_cuda=None):
         '''
         :param
@@ -176,7 +177,7 @@ class BERT_MLP(nn.Module):
         use_cuda = self.use_cuda if use_cuda is None else use_cuda
         EPOCH = hyper_param.get('EPOCH', 3)
         BATCH_SIZE = hyper_param.get('batch_size', 4)
-        LEARNING_RATE = hyper_param.get('learning_rate', 1e-2)
+        LEARNING_RATE = hyper_param.get('learning_rate', 5e-5)
         visualize_length = hyper_param.get('visualize_length', 10)
         result_dir = hyper_param.get('result_dir', './result/')
         model_name = hyper_param.get('model_name', 'model.p')
@@ -185,20 +186,20 @@ class BERT_MLP(nn.Module):
         
 
         train_dataset = data_loader.dataset.train_dataset if train_dataset is None else train_dataset
-
+        train_data_mat_dict = data_loader.transform(train_dataset, data_type=DATA_TYPE)
         ## 保存预处理的文本，这样调参的时候可以直接读取，节约时间   *WARNING*
-        old_train_dict_path = os.path.join(result_dir, 'train_data_mat_dict.pkl')
-        if os.path.exists(old_train_dict_path):
-            train_data_mat_dict = data_loader.load_preprocessed_data(old_train_dict_path)
-            log('Reload preprocessed data successfully~')
-        else:
-            train_data_mat_dict = data_loader.transform(train_dataset, data_type=DATA_TYPE)
-            data_loader.save_preprocessed_data(old_train_dict_path, train_data_mat_dict)
+        # old_train_dict_path = os.path.join(result_dir, 'train_data_mat_dict.pkl')
+        # if os.path.exists(old_train_dict_path):
+        #     train_data_mat_dict = data_loader.load_preprocessed_data(old_train_dict_path)
+        #     log('Reload preprocessed data successfully~')
+        # else:
+        #     train_data_mat_dict = data_loader.transform(train_dataset, data_type=DATA_TYPE)
+        #     data_loader.save_preprocessed_data(old_train_dict_path, train_data_mat_dict)
         ## 保存预处理的文本，这样调参的时候可以直接读取，节约时间   *WARNING*
 
         data_generator = Batch_Generator(train_data_mat_dict, batch_size=BATCH_SIZE, data_type=DATA_TYPE, isshuffle=is_shuffle)
-        optimizer = torch.optim.Adam(self.parameters(), lr=LEARNING_RATE, weight_decay=1e-5)
-
+        
+        
         if use_cuda:
             print('use cuda=========================')
             self.cuda()
@@ -210,6 +211,8 @@ class BERT_MLP(nn.Module):
         score_record = []
 
         eval_param = {'batch_size':100, 'issave':False, 'result_dir': result_dir}
+        optimizer = torch.optim.Adam(self.hidden2tag.parameters(), lr=LEARNING_RATE)  ##TODO:
+
         for epoch in range(EPOCH):
             self.train()
             log(f'EPOCH: {epoch+1}/{EPOCH}', 0)
@@ -219,11 +222,9 @@ class BERT_MLP(nn.Module):
                 optimizer.zero_grad()
                 # nll = self._loss(x, y_ent, lens)
                 # sub_loss = nll.mean()
-                sub_loss = self._loss(x, y_ent, lens)
-                loss_avg = sub_loss
+                loss_avg = self._loss(x, y_ent, lens)
                 loss_avg.backward()
                 optimizer.step()
-
                 # loss_avg = (nll/self._to_tensor(lens, use_cuda)).mean()
                 loss += loss_avg
                 if use_cuda:
@@ -235,6 +236,13 @@ class BERT_MLP(nn.Module):
                     loss_cur = loss / visualize_length
                     log(f'[TRAIN] step: {(cnt+1)*BATCH_SIZE}/{all_cnt} | loss: {loss_cur:.4f}', 1)
                     loss = 0.0
+
+                    print(data_list[0]['input'])
+                    pre_paths = self._output(x, lens)
+                    print('predict-path')
+                    print(pre_paths[0])
+                    print('target-path')
+                    print(y_ent[0])
 
                 if cnt+1 % 100 == 0:
                     save_path = os.path.join(result_dir, model_name)
@@ -282,19 +290,18 @@ class BERT_MLP(nn.Module):
         result_dir = hyper_param.get('result_dir', './result/')
         DATA_TYPE = 'ent'
 
-        if data_set is None:
-            test_dataset = data_loader.dataset.test_dataset
-        else:
-            test_dataset = data_set
+
+        test_dataset = data_loader.dataset.test_dataset if data_set is None else data_set
+        test_data_mat_dict = data_loader.transform(test_dataset, istest=True, data_type=DATA_TYPE)
 
         ## 保存预处理的文本，这样调参的时候可以直接读取，节约时间   *WARNING*
-        old_test_dict_path = os.path.join(result_dir, 'test_data_mat_dict.pkl')
-        if os.path.exists(old_test_dict_path):
-            test_data_mat_dict = data_loader.load_preprocessed_data(old_test_dict_path)
-            log('Reload preprocessed data successfully~')
-        else:
-            test_data_mat_dict = data_loader.transform(test_dataset, istest=True, data_type=DATA_TYPE)
-            data_loader.save_preprocessed_data(old_test_dict_path, test_data_mat_dict)
+        # old_test_dict_path = os.path.join(result_dir, 'test_data_mat_dict.pkl')
+        # if os.path.exists(old_test_dict_path):
+        #     test_data_mat_dict = data_loader.load_preprocessed_data(old_test_dict_path)
+        #     log('Reload preprocessed data successfully~')
+        # else:
+        #     test_data_mat_dict = data_loader.transform(test_dataset, istest=True, data_type=DATA_TYPE)
+        #     data_loader.save_preprocessed_data(old_test_dict_path, test_data_mat_dict)
         ## 保存预处理的文本，这样调参的时候可以直接读取，节约时间   *WARNING*
 
         data_generator = Batch_Generator(test_data_mat_dict, batch_size=BATCH_SIZE, data_type=DATA_TYPE, isshuffle=False)
@@ -302,6 +309,7 @@ class BERT_MLP(nn.Module):
         if use_cuda:
             print('use cuda=========================')
             self.cuda()
+
         self.eval()   #disable dropout layer and the bn layer
 
         total_output_ent = []

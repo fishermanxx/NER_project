@@ -3,25 +3,37 @@ from utils import KGDataLoader, Batch_Generator
 from utils import log, show_result
 
 import os
+os.environ['CUDA_VISIBLE_DEVICES'] = '7'
 import torch
 import numpy as np
 from transformers import BertForTokenClassification, BertTokenizer
 
 
 class BERT_NER:
-    def __init__(self, model_dir=None, params={}):
+    def __init__(self, params={}, show_param=False):
         '''
         :param
             @params['num_labels']
             @params['use_cuda']
         '''
-        self.num_labels = params.get('num_labels', 2)
+        self.num_labels = params.get('num_labels', 45)
         self.use_cuda = params.get('use_cuda', False)
-        # self.model = BertForTokenClassification.from_pretrained('bert-base-chinese', num_labels=self.num_labels)
-        self.model = BertForTokenClassification.from_pretrained('./result/')
+        self.model = BertForTokenClassification.from_pretrained('bert-base-chinese', num_labels=self.num_labels)
+        # self.model = BertForTokenClassification.from_pretrained('./result/')
         if self.use_cuda:
             print('use cuda=========================')
-            self.model.cuda()
+        else:
+            print('not use cuda======================')
+        #     self.model.cuda()
+
+    def show_model_param(self):
+        log('='*80, 0)
+        # log(f'embedding_dim: {self.embedding_dim}', 1)
+        log(f'num_labels: {self.num_labels}', 1)
+        log(f'use_cuda: {self.use_cuda}', 1)
+        # log(f'lstm_layer_num: {self.lstm_layer_num}', 1)
+        # log(f'dropout_prob: {self.dropout_prob}', 1)  
+        log('='*80, 0)   
 
     def _loss(self, x, y_ent, lens):
         '''
@@ -58,7 +70,7 @@ class BERT_NER:
             @x: index之后的word, 每个字符按照字典对应到index, (batch_size, T), np.array
             @lens: (batch_size), list, 具体每个句子的长度, 
         :return 
-            @paths: (batch_size, T+1), torch.tensor, 最佳句子路径
+            @paths: (batch_size, T), torch.tensor, 最佳句子路径
         '''
         use_cuda = self.use_cuda
 
@@ -80,12 +92,14 @@ class BERT_NER:
 
     def load_model(self, path: str):
         if os.path.exists(path):
-            self.model.from_pretrained(path)
+            # self.model.from_pretrained(path)
+            self.model = BertForTokenClassification.from_pretrained(path)
             if self.use_cuda:
                 self.model.cuda()
-            print('reload model')
+            print('reload model successfully(in_model)~')
         else:
-            print('build new model')
+            # print('build new model')
+            pass
 
     def train_model(self, data_loader: KGDataLoader, hyper_param={}, train_dataset=None, eval_dataset=None):
         '''
@@ -106,6 +120,9 @@ class BERT_NER:
         # model_name = hyper_param.get('model_name', 'model.p')
         is_shuffle = hyper_param.get('isshuffle', True)
         DATA_TYPE = 'ent'
+
+        if use_cuda:
+            self.model.cuda()
 
         train_data_mat_dict = data_loader.transform(train_dataset)
         data_generator = Batch_Generator(train_data_mat_dict, batch_size=BATCH_SIZE, data_type=DATA_TYPE, isshuffle=is_shuffle)
@@ -129,13 +146,19 @@ class BERT_NER:
                 x, pos, _, _, y_ent, lens, data_list = data_batch  
 
                 # print(loss.shape)
-                avgloss = self._loss(x, y_ent, lens)
+                loss_avg = self._loss(x, y_ent, lens)
                 optimizer.zero_grad()
-                avgloss.backward()
+                loss_avg.backward()
                 optimizer.step()
                 # print(loss)
 
-                loss += avgloss
+                loss += loss_avg
+                if use_cuda:
+                    loss_record.append(loss_avg.cpu().item())
+                else:
+                    loss_record.append(loss_avg.item())
+
+
                 if (cnt+1) % visualize_length == 0:
                     loss_cur = loss / visualize_length
                     log(f'[TRAIN] step: {(cnt+1)*BATCH_SIZE}/{all_cnt} | loss: {loss_cur:.4f}', 1)
@@ -186,13 +209,16 @@ class BERT_NER:
         result_dir = hyper_param.get('result_dir', './result/')
         DATA_TYPE = 'ent'
         use_cuda = self.use_cuda
+        if use_cuda:
+            self.model.cuda()
 
         if data_set is None:
             test_dataset = data_loader.dataset.test_dataset
         else:
             test_dataset = data_set
 
-        test_data_mat_dict = data_loader.transform(test_dataset)
+        # test_data_mat_dict = data_loader.transform(test_dataset)
+        test_data_mat_dict = data_loader.transform(test_dataset, istest=True, data_type=DATA_TYPE)
         data_generator = Batch_Generator(test_data_mat_dict, batch_size=BATCH_SIZE, data_type=DATA_TYPE, isshuffle=False)
         
         self.model.eval()   #disable dropout layer and the bn layer
@@ -257,7 +283,9 @@ class BERT_NER:
             f1_s = round(2*precision_s*recall_s / (precision_s + recall_s + 1e-8), 3)
             return precision_s, recall_s, f1_s
 
-
+        use_cuda = self.use_cuda
+        if use_cuda:
+            self.model.cuda()
         eva_data_set = data_loader.dataset.dev_dataset if data_set is None else data_set
 
         pred_result = self.predict(data_loader, eva_data_set, hyper_param) ###list(dict), 预测结果
@@ -341,8 +369,8 @@ if __name__ == '__main__':
         'num_labels':45,
         'use_cuda':True   #True
     }
-    model = BERT_NER(params=model_param)
-    # model.load_model('./result/')
+    mymodel = BERT_NER(params=model_param)
+    mymodel.load_model('./result/')
 
     data_set = AutoKGDataset('./d1/')
     # train_dataset = data_set.train_dataset[:20]
@@ -357,13 +385,13 @@ if __name__ == '__main__':
 
     train_param = {
         'learning_rate':5e-5,
-        'EPOCH':5,  #30
+        'EPOCH':3,  #30
         'batch_size':64,  #64
         'visualize_length':20,  #10
         'result_dir': './result/',
         'isshuffle': True
     }
-    model.train_model(data_loader, hyper_param=train_param, train_dataset=train_dataset, eval_dataset=eval_dataset)
+    mymodel.train_model(data_loader, hyper_param=train_param, train_dataset=train_dataset, eval_dataset=eval_dataset)
 
 
     # predict_param = {

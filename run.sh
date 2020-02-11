@@ -1,1 +1,1 @@
-CUDA_VISIBLE_DEVICES=0 python3 run_local.py --use_cuda='1' --dataset_dir='./d1' --code_dir='./code' --mode='train'  | tee log_info.txt
+CUDA_VISIBLE_DEVICES=7 python3 run_local.py --use_cuda='1' --dataset_dir='./d1' --code_dir='./code' --mode='train'  | tee log_info.txt

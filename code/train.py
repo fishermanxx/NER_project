@@ -5,6 +5,7 @@ from utils import show_metadata, show_dict_info
 from ent_model_dropout import BLSTM_CRF
 from model_bert_lstm_crf import BERT_LSTM_CRF
 from model_bert_mlp import BERT_MLP
+from model_bert_mlp2 import BERT_NER
 
 from common import get_logger, Timer
 
@@ -100,27 +101,28 @@ def plot_img(arr, filename='img.png'):
 
 def _train(mymodel, args, data_loader, train_dataset=None, eval_dataset=None, RELOAD_MODEL=None, use_cuda=False):
     old_model_path = os.path.join(args.result_dir, RELOAD_MODEL)
-    if RELOAD_MODEL and os.path.exists(old_model_path):
+    if RELOAD_MODEL is not None and os.path.exists(old_model_path):
         mymodel.load_model(old_model_path)
         LOGGER.info("Reload model successfully~")
     else:
         LOGGER.info(f'There is no such file in {old_model_path}, Rebuild model')
 
     if use_cuda:
-        hyper_param = {
-            'EPOCH': 5,         #45
+        train_param = {
+            'EPOCH': 1,         #45
             'batch_size': 64,    #512
             'learning_rate': 5e-5,
-            'visualize_length': 2, #10
+            'visualize_length': 20, #10
             'isshuffle': True,
             'result_dir': args.result_dir,
             'model_name':'model_test.p'
         }
+
     else:
-        hyper_param = {
+        train_param = {
             'EPOCH': CPU_EPOCH,         #45
             'batch_size': CPU_BATCHSIZE,    #512
-            'learning_rate': 1e-2,
+            'learning_rate': 5e-5,
             'visualize_length': CPU_VISUAL, #10
             'isshuffle': True,
             'result_dir': args.result_dir,
@@ -132,7 +134,8 @@ def _train(mymodel, args, data_loader, train_dataset=None, eval_dataset=None, RE
     loss_record = None
     with timer.time_limit('training'):
         # loss_record, score_record = mymodel.train_model(data_loader, train_dataset, eval_dataset, hyper_param, use_cuda=use_cuda)
-        loss_record, score_record = mymodel.train_model(data_loader, train_dataset, eval_dataset, hyper_param)
+        # loss_record, score_record = mymodel.train_model(data_loader, train_dataset, eval_dataset, hyper_param)
+        loss_record, score_record = mymodel.train_model(data_loader, hyper_param=train_param, train_dataset=train_dataset, eval_dataset=eval_dataset)
 
     loss_record = np.array(loss_record)
     loss_save_path = os.path.join(args.result_dir, 'loss_train.txt')
@@ -152,7 +155,7 @@ def _train(mymodel, args, data_loader, train_dataset=None, eval_dataset=None, RE
 
 def _predict(mymodel, args, data_loader, data_set=None, RELOAD_MODEL=None, use_cuda=False):
     old_model_path = os.path.join(args.result_dir, RELOAD_MODEL)
-    if RELOAD_MODEL and os.path.exists(old_model_path):
+    if RELOAD_MODEL is not None and os.path.exists(old_model_path):
         mymodel.load_model(old_model_path)
         LOGGER.info("Reload model successfully~")
     else:
@@ -172,7 +175,7 @@ def _predict(mymodel, args, data_loader, data_set=None, RELOAD_MODEL=None, use_c
 
 def _eval(mymodel: BLSTM_CRF, args, data_loader, data_set=None, RELOAD_MODEL=None, use_cuda=False):
     old_model_path = os.path.join(args.result_dir, RELOAD_MODEL)
-    if RELOAD_MODEL and os.path.exists(old_model_path):
+    if RELOAD_MODEL is not None and os.path.exists(old_model_path):
         mymodel.load_model(old_model_path)
         LOGGER.info("Reload model successfully~")
     else:
@@ -204,6 +207,7 @@ def main():
     # show_metadata(dataset.metadata_)
 
     LOGGER.info('===== Load metadata')
+    LOGGER.info(f'===== use_cuda: {args.use_cuda}')
     metadata = dataset.get_metadata()
     args.time_budget = metadata.get('time_budget', args.time_budget)
     LOGGER.info(f'Time budget: {args.time_budget}')
@@ -222,11 +226,13 @@ def main():
         'end_idx': data_loader.ent_seq_map_dict[data_loader.END_TAG],  ## <end> tag index for entity tag seq
         'use_cuda':args.use_cuda,
         'dropout_prob': 0,
-        'lstm_layer_num': 1
+        'lstm_layer_num': 1,
+        'num_labels': len(data_loader.ent_seq_map_dict)
     }
     # mymodel = BLSTM_CRF(model_params, show_param=True)   
-    # mymodel = BERT_LSTM_CRF(model_params, show_param=True) 
-    mymodel = BERT_MLP(model_params, show_param=True)
+    mymodel = BERT_LSTM_CRF(model_params, show_param=True) 
+    # mymodel = BERT_MLP(model_params, show_param=True)
+    # mymodel = BERT_NER(model_params, show_param=True)
 
     if args.use_cuda:
         train_dataset = dataset.train_dataset

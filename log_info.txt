@@ -1,0 +1,82 @@
+2020-02-11 20:43:32,124 INFO train.py: ===== Start program
+2020-02-11 20:43:32,125 INFO train.py: ===== Initialize args
+2020-02-11 20:43:32,128 INFO train.py: ===== task mode: train
+2020-02-11 20:43:34,234 INFO train.py: ===== Load metadata
+2020-02-11 20:43:34,234 INFO train.py: ===== use_cuda: 1
+2020-02-11 20:43:34,234 INFO train.py: Time budget: 15000
+================================================================================
+----embedding_dim: 768
+----hidden_dim: 64
+----use_cuda: 1
+----lstm_layer_num: 1
+----dropout_prob: 0
+================================================================================
+2020-02-11 20:43:51,702 INFO train.py: ===== Start Train
+2020-02-11 20:44:02,087 INFO train.py: Reload model successfully~
+learning_rate: 0.01
+Reload preprocessed data successfully~
+use cuda=========================
+model_test.p Training start!
+EPOCH: 1/1
+----[TRAIN] step: 1280/10084 | loss: 0.0651
+----[TRAIN] step: 2560/10084 | loss: 0.0609
+----[TRAIN] step: 3840/10084 | loss: 0.0612
+----[TRAIN] step: 5120/10084 | loss: 0.0628
+----[TRAIN] step: 6400/10084 | loss: 0.0642
+----[TRAIN] step: 7680/10084 | loss: 0.0656
+----[TRAIN] step: 8960/10084 | loss: 0.0599
+Checkpoint saved successfully
+Process 0.000 
+Process 0.069 
+Process 0.139 
+Process 0.208 
+Process 0.278 
+Process 0.347 
+Process 0.416 
+Process 0.486 
+Process 0.555 
+Process 0.625 
+Process 0.694 
+Process 0.763 
+Process 0.833 
+Process 0.902 
+Process 0.972 
+use cuda=========================
+Predict start!
+----[PREDICT] step 1000/4323
+----[PREDICT] step 2000/4323
+----[PREDICT] step 3000/4323
+----[PREDICT] step 4000/4323
+Eval start
+----[EVAL] step 1000/4323 | precision: 0.74 | recall: 0.603 | f1 score: 0.665
+----[EVAL] step 2000/4323 | precision: 0.728 | recall: 0.597 | f1 score: 0.656
+----[EVAL] step 3000/4323 | precision: 0.727 | recall: 0.592 | f1 score: 0.653
+----[EVAL] step 4000/4323 | precision: 0.727 | recall: 0.594 | f1 score: 0.654
+====================================================================================================
+[FINAL] | precision: 0.728 | recall: 0.596 | f1 score: 0.655
+====================================================================================================
+2020-02-11 20:46:35,577 INFO common.py: training success, time spent so far 153.4897 sec
+
+
+2020-02-11 20:46:36,995 INFO train.py: ===== Start Eval
+2020-02-11 20:46:37,399 INFO train.py: Reload model successfully~
+2020-02-11 20:46:37,399 INFO train.py: reload model model_test.p
+Reload preprocessed data successfully~
+use cuda=========================
+Predict start!
+----[PREDICT] step 1000/4323
+----[PREDICT] step 2000/4323
+----[PREDICT] step 3000/4323
+----[PREDICT] step 4000/4323
+save the predict result in /mnt/disk0/home/xuxin/mywork/code/../result/predict.json
+Eval start
+----[EVAL] step 1000/4323 | precision: 0.738 | recall: 0.602 | f1 score: 0.663
+----[EVAL] step 2000/4323 | precision: 0.731 | recall: 0.599 | f1 score: 0.658
+----[EVAL] step 3000/4323 | precision: 0.729 | recall: 0.594 | f1 score: 0.655
+----[EVAL] step 4000/4323 | precision: 0.729 | recall: 0.597 | f1 score: 0.656
+====================================================================================================
+[FINAL] | precision: 0.731 | recall: 0.599 | f1 score: 0.658
+====================================================================================================
+2020-02-11 20:46:58,710 INFO common.py: eval success, time spent so far 21.3112 sec
+
+
