@@ -221,7 +221,7 @@ class CRF(nn.Module):
             @logits: (batch_size, T, n_tags), torch.tensor, self._get_lstm_features的output, 类似eject score
             @lens: (batch_size), list, 具体每个句子的长度
         :return
-            @paths: (batch_size, T+1), torch.tensor, 最佳句子路径
+            @paths: (batch_size, T+1), torch.tensor, 最佳句子路径  '<start> this is a sentence.'
         '''
         use_cuda = self.use_cuda if use_cuda is None else use_cuda
         batch_size, T, n_tags = logits.size()
@@ -396,7 +396,9 @@ class BERT_LSTM_CRF(nn.Module):
         self.hidden2tag = nn.Linear(self.hidden_dim, self.n_tags)
         crf_params = {'n_tags':self.n_tags, 'start_idx':self.start_idx, 'end_idx':self.end_idx, 'use_cuda':self.use_cuda}
         self.crf = CRF(crf_params)
-        self.bert = transformers.DistilBertModel.from_pretrained('distilbert-base-uncased')
+
+        # self.bert = transformers.DistilBertModel.from_pretrained('distilbert-base-uncased')
+        self.bert = transformers.BertModel.from_pretrained('bert-base-chinese')
 
     def reset_parameters(self):        
         I.xavier_normal_(self.word_embeds.weight.data)

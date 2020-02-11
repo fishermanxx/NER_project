@@ -65,13 +65,24 @@ def show_dict_info(dataloader):
     print('============================================================')
     print()
 
+def load_bert_pretrained_dict():
+    vocab_list = []
+    with open('./d1/vocab.txt', encoding='utf-8') as f:
+        for l in f.readlines():
+            vocab_list.append(l.strip())
+
+    vocab_dict = {}
+    for idx, word in enumerate(vocab_list):
+        vocab_dict[word]=idx
+    # print(len(vocab_dict))
+    return vocab_dict
 
 class BaseLoader:
     def __init__(self):
         self.START_TAG = '<start>'
         self.END_TAG= '<end>'
-        self.UNK_TAG = '<UNK>'
-        self.PAD_TAG = '<PAD>'
+        self.UNK_TAG = '[UNK]'
+        self.PAD_TAG = '[PAD]'
 
     def _inverse_dict(self, d):
         '''
@@ -173,7 +184,9 @@ class KGDataLoader(BaseLoader):
         self.entity_type_dict = self.embedding_info_dicts['entity_type_dict'] ## 实体类别字典
         self.inverse_entity_type_dict = self._inverse_dict(self.entity_type_dict)
 
-        self.character_location_dict = self.embedding_info_dicts['character_location_dict']
+        # self.character_location_dict = self.embedding_info_dicts['character_location_dict']  TODO:
+        self.character_location_dict = load_bert_pretrained_dict()
+
         self.inverse_character_location_dict = self._inverse_dict(self.character_location_dict)
         self.pos_location_dict = self.embedding_info_dicts['pos_location_dict']
         self.inverse_pos_location_dict = self._inverse_dict(self.pos_location_dict)
@@ -589,58 +602,59 @@ class Batch_Generator(nn.Module):
 
 if __name__ == '__main__':
 
-    data_set = AutoKGDataset('/Users/work-xx-pc/Desktop/xx-work/bilstm_crf_test/d1/')
-    train_dataset = data_set.train_dataset[:10]
+    load_bert_pretrained_dict()
+    # data_set = AutoKGDataset('/Users/work-xx-pc/Desktop/xx-work/bilstm_crf_test/d1/')
+    # train_dataset = data_set.train_dataset[:10]
 
-    data_loader = KGDataLoader(data_set, rebuild=False, temp_dir='/Users/work-xx-pc/Desktop/xx-work/bilstm_crf_test/result/')
-    show_dict_info(data_loader)
+    # data_loader = KGDataLoader(data_set, rebuild=False, temp_dir='/Users/work-xx-pc/Desktop/xx-work/bilstm_crf_test/result/')
+    # show_dict_info(data_loader)
     
-    train_data_mat_dict = data_loader.transform(train_dataset)
-    data_generator = Batch_Generator(train_data_mat_dict, batch_size=4, data_type='ent', isshuffle=True)
+    # train_data_mat_dict = data_loader.transform(train_dataset)
+    # data_generator = Batch_Generator(train_data_mat_dict, batch_size=4, data_type='ent', isshuffle=True)
 
-    for epoch in range(3):
-        print('='*100)
-        print('epoch %d' % (epoch))
-        for data_batch in data_generator:
-            x, pos, _, _, y_ent, sentence_length, data_list = data_batch
-            print(x.shape)
-            print(sentence_length)
+    # for epoch in range(3):
+    #     print('='*100)
+    #     print('epoch %d' % (epoch))
+    #     for data_batch in data_generator:
+    #         x, pos, _, _, y_ent, sentence_length, data_list = data_batch
+    #         print(x.shape)
+    #         print(sentence_length)
 
-            for i in range(x.shape[0]):
-                ori_data = data_list[i]
+    #         for i in range(x.shape[0]):
+    #             ori_data = data_list[i]
 
-                ## check x -- 句子字符层面上的编码======================
-                ori_sentence = ori_data['input']
-                x_i = x[i][:sentence_length[i]]
-                x_decode = [data_loader.inverse_character_location_dict[w] for w in x_i]
-                x_decode = ''.join(x_decode)
-                print('orgin sentence:', ori_sentence)
-                print('decode sentence:', x_decode)
+    #             ## check x -- 句子字符层面上的编码======================
+    #             ori_sentence = ori_data['input']
+    #             x_i = x[i][:sentence_length[i]]
+    #             x_decode = [data_loader.inverse_character_location_dict[w] for w in x_i]
+    #             x_decode = ''.join(x_decode)
+    #             print('orgin sentence:', ori_sentence)
+    #             print('decode sentence:', x_decode)
 
-                ## check y_ent -- entity============================
-                # ori_sentence = ori_data['input']
-                # ori_entitys = ori_data['output']['entity_list']
-                # print('ori_entitys', ori_entitys)
-                # ent_i = y_ent[i][:sentence_length[i]]
-                # ent_decode = data_loader._obtain_entity(ent_i, ori_sentence)
-                # print('ent_decode', ent_decode)
-                # print(type(ent_decode), type(list(ent_decode)[0]))
+    #             ## check y_ent -- entity============================
+    #             # ori_sentence = ori_data['input']
+    #             # ori_entitys = ori_data['output']['entity_list']
+    #             # print('ori_entitys', ori_entitys)
+    #             # ent_i = y_ent[i][:sentence_length[i]]
+    #             # ent_decode = data_loader._obtain_entity(ent_i, ori_sentence)
+    #             # print('ent_decode', ent_decode)
+    #             # print(type(ent_decode), type(list(ent_decode)[0]))
 
-                ## check pos============================
-                # ori_sentence = ori_data['input']
-                # ori_pos = pseg.cut(ori_sentence)
-                # wlist, plist = [], []
-                # for wp in ori_pos:
-                #     wlist.append(wp.word)
-                #     plist.append(wp.flag)
-                # pos_i = pos[i][:sentence_length[i]]
-                # pos_decode = [data_loader.inverse_pos_location_dict[p] for p in pos_i]
-                # print(wlist[:5])
-                # print(plist[:5])
-                # pos_check = list(zip(list(ori_sentence), pos_decode))
-                # print(pos_check)
+    #             ## check pos============================
+    #             # ori_sentence = ori_data['input']
+    #             # ori_pos = pseg.cut(ori_sentence)
+    #             # wlist, plist = [], []
+    #             # for wp in ori_pos:
+    #             #     wlist.append(wp.word)
+    #             #     plist.append(wp.flag)
+    #             # pos_i = pos[i][:sentence_length[i]]
+    #             # pos_decode = [data_loader.inverse_pos_location_dict[p] for p in pos_i]
+    #             # print(wlist[:5])
+    #             # print(plist[:5])
+    #             # pos_check = list(zip(list(ori_sentence), pos_decode))
+    #             # print(pos_check)
 
-                break
+    #             break
 
 
 

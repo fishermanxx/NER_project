@@ -4,6 +4,7 @@ from utils import show_metadata, show_dict_info
 # from ent_model import BLSTM_CRF
 from ent_model_dropout import BLSTM_CRF
 from model_bert_lstm_crf import BERT_LSTM_CRF
+from model_bert_mlp import BERT_MLP
 
 from common import get_logger, Timer
 
@@ -107,9 +108,9 @@ def _train(mymodel, args, data_loader, train_dataset=None, eval_dataset=None, RE
 
     if use_cuda:
         hyper_param = {
-            'EPOCH': 40,         #45
-            'batch_size': 128,    #512
-            'learning_rate': 1e-2,
+            'EPOCH': 5,         #45
+            'batch_size': 64,    #512
+            'learning_rate': 5e-5,
             'visualize_length': 2, #10
             'isshuffle': True,
             'result_dir': args.result_dir,
@@ -130,8 +131,9 @@ def _train(mymodel, args, data_loader, train_dataset=None, eval_dataset=None, RE
     timer.set(args.time_budget)
     loss_record = None
     with timer.time_limit('training'):
-        loss_record, score_record = mymodel.train_model(data_loader, train_dataset, eval_dataset, hyper_param, use_cuda=use_cuda)
-    
+        # loss_record, score_record = mymodel.train_model(data_loader, train_dataset, eval_dataset, hyper_param, use_cuda=use_cuda)
+        loss_record, score_record = mymodel.train_model(data_loader, train_dataset, eval_dataset, hyper_param)
+
     loss_record = np.array(loss_record)
     loss_save_path = os.path.join(args.result_dir, 'loss_train.txt')
     loss_img_path = os.path.join(args.result_dir, 'loss.png')
@@ -219,11 +221,12 @@ def main():
         'start_idx': data_loader.ent_seq_map_dict[data_loader.START_TAG],  ## <start> tag index for entity tag seq
         'end_idx': data_loader.ent_seq_map_dict[data_loader.END_TAG],  ## <end> tag index for entity tag seq
         'use_cuda':args.use_cuda,
-        'dropout_prob': 0.05,
+        'dropout_prob': 0,
         'lstm_layer_num': 1
     }
     # mymodel = BLSTM_CRF(model_params, show_param=True)   
-    mymodel = BERT_LSTM_CRF(model_params, show_param=True) 
+    # mymodel = BERT_LSTM_CRF(model_params, show_param=True) 
+    mymodel = BERT_MLP(model_params, show_param=True)
 
     if args.use_cuda:
         train_dataset = dataset.train_dataset
@@ -236,7 +239,7 @@ def main():
 
     if args.mode == 'train':
         LOGGER.info('===== Start Train')
-        _train(mymodel, args, data_loader, train_dataset=train_dataset, eval_dataset=eval_dataset, RELOAD_MODEL='model.p', use_cuda=args.use_cuda)
+        _train(mymodel, args, data_loader, train_dataset=train_dataset, eval_dataset=eval_dataset, RELOAD_MODEL='model_test.p', use_cuda=args.use_cuda)
 
         LOGGER.info('===== Start Eval')
         _eval(mymodel, args, data_loader, data_set=eval_dataset, RELOAD_MODEL='model_test.p', use_cuda=args.use_cuda)
