@@ -1,15 +1,20 @@
 # !-*- coding:utf-8 -*-
 
+from dataset import AutoKGDataset
+from utils import KGDataLoader, Batch_Generator
+
 import torch
 from torch import nn
 import torch.nn.init as I
 from torch.autograd import Variable
+import os
+os.environ['CUDA_VISIBLE_DEVICES'] = '7'
 
 import transformers
 
-# from dataset import AutoKGDataset
-from utils import KGDataLoader, Batch_Generator
+
 from utils import log, show_result
+from model_bert_lstm_crf import CRF
 
 from torch.optim.lr_scheduler import LambdaLR
 from utils import my_lr_lambda
@@ -21,7 +26,7 @@ import numpy as np
 
 torch.manual_seed(1)
 
-class BERT_MLP(nn.Module):
+class BERT_CRF(nn.Module):
     def __init__(self, params={}, show_param=False):
         '''
         :param - dict
@@ -35,12 +40,16 @@ class BERT_MLP(nn.Module):
             param['dropout_prob']
             param['lstm_layer_num']
         '''
-        super(BERT_MLP, self).__init__()
+        super(BERT_CRF, self).__init__()
         self.params = params
         self.embedding_dim = self.params.get('embedding_dim', 768)
-        self.n_tags = self.params.get('n_tags', 45)
-        self.use_cuda = self.params.get('use_cuda', 0)
-        self.model_type = 'BERT_MLP'
+        self.n_tags = self.params['n_tags']
+        # self.n_words = self.params['n_words']
+        self.start_idx = self.params['start_idx']
+        self.end_idx = self.params['end_idx']
+        self.use_cuda = self.params['use_cuda']
+        # self.dropout_prob = self.params.get('dropout_prob', 0)
+        self.model_type = 'BERT_CRF'
 
         self.build_model()
         self.reset_parameters()
@@ -52,7 +61,8 @@ class BERT_MLP(nn.Module):
         log(f'model_type: {self.model_type}', 1)
         log(f'embedding_dim: {self.embedding_dim}', 1)
         log(f'num_labels: {self.n_tags}', 1)
-        log(f'use_cuda: {self.use_cuda}', 1) 
+        log(f'use_cuda: {self.use_cuda}', 1)
+        # log(f'dropout_prob: {self.dropout_prob}', 1)  
         log('='*80, 0)      
 
     def build_model(self):
@@ -60,16 +70,35 @@ class BERT_MLP(nn.Module):
         build the embedding layer, lstm layer and CRF layer
         '''
         self.hidden2tag = nn.Linear(self.embedding_dim, self.n_tags)
+        crf_params = {'n_tags':self.n_tags, 'start_idx':self.start_idx, 'end_idx':self.end_idx, 'use_cuda':self.use_cuda}
+        self.crf = CRF(crf_params)
         self.bert = transformers.BertModel.from_pretrained('bert-base-chinese')
 
     def reset_parameters(self):        
-        # I.xavier_normal_(self.word_embeds.weight.data)
-        # self.lstm.reset_parameters()
-        # stdv = 1.0 / math.sqrt(self.hidden_dim)
-        # for weight in self.lstm.parameters():
-        #     I.uniform_(weight, -stdv, stdv)
         I.xavier_normal_(self.hidden2tag.weight.data)
-        # self.crf.reset_parameters()
+        self.crf.reset_parameters()
+        
+    def _get_features(self, x, lens, use_cuda=None):
+        '''
+        :param  
+            @x: index之后的word, 每个字符按照字典对应到index, (batch_size, T), np.array
+            @lens: 每个句子的实际长度 (batch_size)
+        :return 
+            @lstm_feature: (batch_size, T, n_tags) -- 类似于eject score, torch.tensor
+        '''
+        use_cuda = self.use_cuda if use_cuda is None else use_cuda
+        batch_size, T = x.shape
+
+        words_tensor = self._to_tensor(x, use_cuda)  #(batch_size, T)
+        lens = self._to_tensor(lens)
+        att_mask = self._generate_mask(lens, max_len=T).cuda()
+        embeds = self.bert(words_tensor, attention_mask=att_mask)[0]  #(batch_size, T, n_embed)
+        
+        ##FC layer
+        feature = self.hidden2tag(embeds) #(batch_size, T, n_tags)
+        feature = torch.tanh(feature)
+        print(feature.shape)
+        return feature
 
     def _loss(self, x, y_ent, lens, use_cuda=None):
         '''
@@ -82,28 +111,12 @@ class BERT_MLP(nn.Module):
             @loss: (batch_size), torch.tensor
         '''
         use_cuda = self.use_cuda if use_cuda is None else use_cuda
-        T = x.shape[1]
 
-        words_tensor = self._to_tensor(x, use_cuda)  #(batch_size, T)
-        lens = self._to_tensor(lens, use_cuda)
-        att_mask = self._generate_mask(lens, max_len=T)
-        embeds = self.bert(words_tensor, attention_mask=att_mask)[0]  #(batch_size, T, n_embed)
-        # print(embeds.shape)
-        labels = self.hidden2tag(embeds)  #(batch_size, T, n_tags)
-        labels = labels.transpose(2, 1)  #(batch_size, n_tags, T)
-        # print(labels.shape)
+        logits = self._get_features(x, lens)
+        log_norm_score = self.crf.log_norm_score(logits, lens)
+        path_score = self.crf.path_score(logits, y_ent, lens)
 
-        targets = self._to_tensor(y_ent, use_cuda)  ##(batch_size, T)
-        loss_fn = nn.CrossEntropyLoss()  ###labels need to be [N, C, d1, d2, ...] and targets [N, d1, d2, ...]
-        loss = loss_fn(labels, targets)
-
-        # print(loss.shape)
-        # print(loss)
-        
-        # logits = self._get_lstm_features(x, lens)
-        # log_norm_score = self.crf.log_norm_score(logits, lens)
-        # path_score = self.crf.path_score(logits, y_ent, lens)
-        # loss = log_norm_score - path_score
+        loss = log_norm_score - path_score
         return loss
 
     def _output(self, x, lens, use_cuda=None):
@@ -113,27 +126,14 @@ class BERT_MLP(nn.Module):
             @x: index之后的word, 每个字符按照字典对应到index, (batch_size, T), np.array
             @lens: (batch_size), list, 具体每个句子的长度, 
         :return 
-            @paths: (batch_size, T), torch.tensor, 最佳句子路径
+            @paths: (batch_size, T+1), torch.tensor, 最佳句子路径
             @scores: (batch_size), torch.tensor, 最佳句子路径上的得分
         '''
-
-        self.eval()
+        # self.eval()
         use_cuda = self.use_cuda if use_cuda is None else use_cuda
-        T = x.shape[1]
-
-        words_tensor = self._to_tensor(x, use_cuda)  #(batch_size, T)
-        lens = self._to_tensor(lens, use_cuda)
-        att_mask = self._generate_mask(lens, max_len=T)
-
-        embeds = self.bert(words_tensor, attention_mask=att_mask)[0]  #(batch_size, T, n_embed)
-        # print(embeds.shape)
-        labels = self.hidden2tag(embeds)  #(batch_size, T, n_tags)
-        # print(labels.shape)
-        label_max, label_argmax = labels.max(dim=2)
-
-        # print(label_argmax.shape)
-        paths = label_argmax
-        return paths
+        logits = self._get_features(x, lens, use_cuda)
+        scores, paths = self.crf.viterbi_decode(logits, lens, use_cuda)
+        return paths, scores
 
     def save_model(self, path: str):
         torch.save(self.state_dict(), path)
@@ -153,11 +153,11 @@ class BERT_MLP(nn.Module):
             @data_loader: (KGDataLoader),
             @result_dir: (str) path to save the trained model and extracted dictionary
             @hyper_param: (dict)
+                @hyper_param['EPOCH']
+                @hyper_param['batch_size']
                 @hyper_param['learning_rate_upper']
                 @hyper_param['learning_rate_bert']
                 @hyper_param['bert_finetune']
-                @hyper_param['EPOCH']
-                @hyper_param['batch_size']
                 @hyper_param['visualize_length']   #num of batches between two check points
                 @hyper_param['isshuffle']
                 @hyper_param['result_dir']
@@ -167,15 +167,12 @@ class BERT_MLP(nn.Module):
             @score_record
         '''
         use_cuda = self.use_cuda if use_cuda is None else use_cuda
-        if use_cuda:
-            self.cuda()
-
-        LEARNING_RATE_bert = hyper_param.get('learning_rate_bert', 5e-5)
-        LEARNING_RATE_upper = hyper_param.get('learning_rate_upper', 1e-3)
-        bert_finetune = hyper_param.get('bert_finetune', True)
-
         EPOCH = hyper_param.get('EPOCH', 3)
         BATCH_SIZE = hyper_param.get('batch_size', 4)
+        LEARNING_RATE_upper = hyper_param.get('learning_rate_upper', 1e-2)
+        LEARNING_RATE_bert = hyper_param.get('learning_rate_bert', 5e-5)
+        bert_finetune = hyper_param.get('bert_finetune', True)
+        
         visualize_length = hyper_param.get('visualize_length', 10)
         result_dir = hyper_param.get('result_dir', './result/')
         model_name = hyper_param.get('model_name', 'model.p')
@@ -195,22 +192,30 @@ class BERT_MLP(nn.Module):
         ## 保存预处理的文本，这样调参的时候可以直接读取，节约时间   *WARNING*
         data_generator = Batch_Generator(train_data_mat_dict, batch_size=BATCH_SIZE, data_type=DATA_TYPE, isshuffle=is_shuffle)
 
-        cls_param = self.hidden2tag.parameters()
-        bert_param = self.bert.parameters()
+        crf_param = list(self.crf.parameters())
+        fc_param = list(self.hidden2tag.parameters())
+        lstm_param = list(self.lstm.parameters())
+        bert_param = list(self.bert.parameters())
+
         if bert_finetune:
             optimizer_group_paramters = [
-                {'params': cls_param, 'lr': LEARNING_RATE_upper}, 
+                {'params': crf_param + fc_param + lstm_param, 'lr': LEARNING_RATE_upper}, 
                 {'params': bert_param, 'lr': LEARNING_RATE_bert}
             ]
             optimizer = torch.optim.Adam(optimizer_group_paramters)
             log(f'****BERT_finetune, learning_rate_upper: {LEARNING_RATE_upper}, learning_rate_bert: {LEARNING_RATE_bert}', 0)
         else:
-            optimizer = torch.optim.Adam(cls_param, lr=LEARNING_RATE_upper)
+            optimizer = torch.optim.Adam(crf_param+fc_param+lstm_param, lr=LEARNING_RATE_upper)
             log(f'****BERT_fix, learning_rate_upper: {LEARNING_RATE_upper}', 0)
         
         ##TODO:
         scheduler = LambdaLR(optimizer, lr_lambda=my_lr_lambda)
         # scheduler = transformers.optimization.get_cosine_schedule_with warmup(optimizer, num_warmup_steps=int(EPOCH*0.2), num_training_steps=EPOCH)
+
+        if use_cuda:
+            print('use cuda=========================')
+            self.cuda()
+        
 
         all_cnt = len(train_data_mat_dict['cha_matrix'])
         log(f'{model_name} Training start!', 0)
@@ -218,7 +223,7 @@ class BERT_MLP(nn.Module):
         score_record = []
         max_score = 0
 
-        eval_param = {'batch_size':100, 'issave':False, 'result_dir': result_dir}
+        evel_param = {'batch_size':100, 'issave':False, 'result_dir': result_dir}
         for epoch in range(EPOCH):
             self.train()
 
@@ -227,9 +232,12 @@ class BERT_MLP(nn.Module):
             for cnt, data_batch in enumerate(data_generator):
                 x, pos, _, _, y_ent, lens, data_list = data_batch
                 optimizer.zero_grad()
-                loss_avg = self._loss(x, y_ent, lens)
-                loss_avg.backward()
+                nll = self._loss(x, y_ent, lens)
+                sub_loss = nll.mean()
+                sub_loss.backward()
                 optimizer.step()
+
+                loss_avg = (nll/self._to_tensor(lens, use_cuda)).mean()
                 loss += loss_avg
                 if use_cuda:
                     loss_record.append(loss_avg.cpu().item())
@@ -243,22 +251,22 @@ class BERT_MLP(nn.Module):
 
                     # self.eval()
                     # print(data_list[0]['input'])
-                    # pre_paths = self._output(x, lens)
+                    # pre_paths, pre_scores = self._output(x, lens)
                     # print('predict-path')
                     # print(pre_paths[0])
                     # print('target-path')
                     # print(y_ent[0])
-                    # self.train()
+                    # self.train()        
 
-                if cnt+1 % 100 == 0:
-                    save_path = os.path.join(result_dir, model_name)
-                    self.save_model(save_path)
-                    print('Checkpoint saved successfully')
+                # if cnt+1 % 100 == 0:
+                #     save_path = os.path.join(result_dir, model_name)
+                #     self.save_model(save_path)
+                #     print('Checkpoint saved successfully')
 
-            temp_score = self.eval_model(data_loader, data_set=eval_dataset, hyper_param=eval_param, use_cuda=use_cuda)
+            temp_score = self.eval_model(data_loader, data_set=eval_dataset, hyper_param=evel_param, use_cuda=use_cuda)
             score_record.append(temp_score)
             scheduler.step()
-
+            
             if temp_score[2] > max_score:
                 max_score = temp_score[2]
                 save_path = os.path.join(result_dir, model_name)
@@ -266,7 +274,6 @@ class BERT_MLP(nn.Module):
                 print(f'Checkpoint saved successfully, current best socre is {max_score}')
         log(f'the best score of the model is {max_score}')
         return loss_record, score_record
-
 
     @torch.no_grad()
     def predict(self, data_loader: KGDataLoader, data_set=None, hyper_param={}, use_cuda=False):
@@ -277,7 +284,7 @@ class BERT_MLP(nn.Module):
             @hyper_param: (dict)
                 @hyper_param['batch_size']  ##默认4
                 @hyper_param['issave']  ##默认False
-                @hyper_param['result_dir']  ##默认./result/
+                @hyper_param['result_dir']  ##默认None
         :return
             @result: list
                 case = result[0]
@@ -294,18 +301,18 @@ class BERT_MLP(nn.Module):
         result_dir = hyper_param.get('result_dir', './result/')
         DATA_TYPE = 'ent'
 
-
+        
         test_dataset = data_loader.dataset.test_dataset if data_set is None else data_set
-        test_data_mat_dict = data_loader.transform(test_dataset, istest=True, data_type=DATA_TYPE)
+        # test_data_mat_dict = data_loader.transform(test_dataset, istest=True, data_type=DATA_TYPE)
 
         ## 保存预处理的文本，这样调参的时候可以直接读取，节约时间   *WARNING*
-        # old_test_dict_path = os.path.join(result_dir, 'test_data_mat_dict.pkl')
-        # if os.path.exists(old_test_dict_path):
-        #     test_data_mat_dict = data_loader.load_preprocessed_data(old_test_dict_path)
-        #     log('Reload preprocessed data successfully~')
-        # else:
-        #     test_data_mat_dict = data_loader.transform(test_dataset, istest=True, data_type=DATA_TYPE)
-        #     data_loader.save_preprocessed_data(old_test_dict_path, test_data_mat_dict)
+        old_test_dict_path = os.path.join(result_dir, 'test_data_mat_dict.pkl')
+        if os.path.exists(old_test_dict_path):
+            test_data_mat_dict = data_loader.load_preprocessed_data(old_test_dict_path)
+            log('Reload preprocessed data successfully~')
+        else:
+            test_data_mat_dict = data_loader.transform(test_dataset, istest=True, data_type=DATA_TYPE)
+            data_loader.save_preprocessed_data(old_test_dict_path, test_data_mat_dict)
         ## 保存预处理的文本，这样调参的时候可以直接读取，节约时间   *WARNING*
 
         data_generator = Batch_Generator(test_data_mat_dict, batch_size=BATCH_SIZE, data_type=DATA_TYPE, isshuffle=False)
@@ -313,7 +320,6 @@ class BERT_MLP(nn.Module):
         if use_cuda:
             print('use cuda=========================')
             self.cuda()
-
         self.eval()   #disable dropout layer and the bn layer
 
         total_output_ent = []
@@ -321,11 +327,11 @@ class BERT_MLP(nn.Module):
         log(f'Predict start!', 0)
         for cnt, data_batch in enumerate(data_generator):
             x, pos, _, _, _, lens, _ = data_batch
-            pre_paths = self._output(x, lens)  ##pre_paths, (batch_size, T), torch.tensor  
+            pre_paths, pred_scores = self._output(x, lens)  ##pre_paths, (batch_size, T+1), torch.tensor
             if use_cuda:
-                pre_paths = pre_paths.data.cpu().numpy().astype(np.int)
+                pre_paths = pre_paths.data.cpu().numpy()[:, 1:].astype(np.int)
             else:
-                pre_paths = pre_paths.data.numpy().astype(np.int)
+                pre_paths = pre_paths.data.numpy()[:, 1:].astype(np.int)
             total_output_ent.append(pre_paths)
             
             if (cnt+1) % 10 == 0:
@@ -441,81 +447,69 @@ class BERT_MLP(nn.Module):
         :return 
             @mask: (batch_size, max_len)
         '''
-        # use_cuda = self.use_cuda if use_cuda is None else use_cuda
+        use_cuda = self.use_cuda if use_cuda is None else use_cuda
         batch_size = lens.shape[0]
         if max_len is None:
             max_len = lens.max()
         ranges = torch.arange(0, max_len).long()  #(max_len)
-        if lens.is_cuda:
+        if use_cuda:
             ranges = ranges.cuda()
         ranges = ranges.unsqueeze(0).expand(batch_size, max_len)   #(batch_size, max_len)
         lens_exp = lens.unsqueeze(1).expand_as(ranges)  #(batch_size, max_len)
         mask = ranges < lens_exp
         return mask
 
+
 if __name__ == '__main__':
-    model_param = {
-        'num_labels':45,
-        'use_cuda':True   #True
+    model_params = {
+        'embedding_dim' : 768,
+        'hidden_dim' : 64,
+        'n_tags' : 45,
+        'n_words' : 22118,
+        'start_idx': 43,  ## <start> tag index for entity tag seq
+        'end_idx': 44,  ## <end> tag index for entity tag seq
+        'use_cuda':1,
+        'dropout_prob': 0,
+        'lstm_layer_num': 1,
+        'num_labels': 45
     }
-    model = BERT_NER(params=model_param)
-    # model.load_model('./result/')
+    
+    mymodel = BERT_CRF(model_params, show_param=True) 
 
     data_set = AutoKGDataset('./d1/')
-    # train_dataset = data_set.train_dataset[:20]
-    # eval_dataset = data_set.dev_dataset[:10]
-    train_dataset = data_set.train_dataset
-    eval_dataset = data_set.dev_dataset
+    train_dataset = data_set.train_dataset[:20]
+    eval_dataset = data_set.dev_dataset[:10]
+    # # train_dataset = data_set.train_dataset
+    # # eval_dataset = data_set.dev_dataset
 
     os.makedirs('result', exist_ok=True)
     data_loader = KGDataLoader(data_set, rebuild=False, temp_dir='result/')
 
-    print(data_loader.embedding_info_dicts['entity_type_dict'])
+    # print(data_loader.embedding_info_dicts['entity_type_dict'])
+ 
+    train_data_mat_dict = data_loader.transform(train_dataset)
+    data_generator = Batch_Generator(train_data_mat_dict, batch_size=4, data_type='ent', isshuffle=True)
 
-    train_param = {
-        'learning_rate':5e-5,
-        'EPOCH':5,  #30
-        'batch_size':64,  #64
-        'visualize_length':20,  #10
-        'result_dir': './result/',
-        'isshuffle': True
-    }
-    model.train_model(data_loader, hyper_param=train_param, train_dataset=train_dataset, eval_dataset=eval_dataset)
+    for epoch in range(2):
+        print('EPOCH: %d' % epoch)
+        for data_batch in data_generator:
+            x, pos, _, _, y_ent, lens, data_list = data_batch
+            print(x.shape, pos.shape, y_ent.shape)    ##(batch_size, max_length)
+            sentence = data_list[0]['input']
+            # print([(i, sentence[i]) for i in range(len(sentence))])
 
+            ###======================for BERT-MLP-MODEL only==================================
+            mymodel._get_features(x, lens)
+            loss = mymodel._loss(x, y_ent, lens)
+            print(loss.shape)
+            mymodel._output(x, lens)
 
-    # predict_param = {
-    #     'result_dir':'./result/',
-    #     'issave':False,
-    #     'batch_size':64
-    # }
-    # # model.predict(data_loader, data_set=eval_dataset, hyper_param=predict_param)
-    # model.eval_model(data_loader, data_set=eval_dataset, hyper_param=predict_param)
-
-
-    # train_data_mat_dict = data_loader.transform(train_dataset)
-
-    # data_generator = Batch_Generator(train_data_mat_dict, batch_size=4, data_type='ent', isshuffle=True)
-
-
-
-    # for epoch in range(EPOCH):
-    #     print('EPOCH: %d' % epoch)
-    #     for data_batch in data_generator:
-    #         x, pos, _, _, y_ent, lens, data_list = data_batch
-    #         print(x.shape, pos.shape, y_ent.shape)    ##(batch_size, max_length)
-    #         sentence = data_list[0]['input']
-    #         # print([(i, sentence[i]) for i in range(len(sentence))])
-
-    #         ###======================for BERT-MLP-MODEL only==================================
-    #         mymodel._loss(x, y_ent, lens, use_cuda=False)
-    #         mymodel._output(x, lens, use_cuda=False)
-
-    #         print(x[0])
-    #         word_dict = data_loader.character_location_dict
-    #         rev_word_dict = data_loader.inverse_character_location_dict
-    #         print(list(word_dict.items())[1300:1350])
-    #         print(list(rev_word_dict.items())[1300:1350])
-    #         print(sentence)
-    #         print(list(rev_word_dict[i] for i in x[0]))
-    #     break
-    # break
+            # print(x[0])
+            # word_dict = data_loader.character_location_dict
+            # rev_word_dict = data_loader.inverse_character_location_dict
+            # print(list(word_dict.items())[1300:1350])
+            # print(list(rev_word_dict.items())[1300:1350])
+            # print(sentence)
+            # print(list(rev_word_dict[i] for i in x[0]))
+            break
+        break

@@ -8,32 +8,30 @@ import torch
 import numpy as np
 from transformers import BertForTokenClassification, BertTokenizer
 
+from torch.optim.lr_scheduler import LambdaLR
+from utils import my_lr_lambda
 
 class BERT_NER:
     def __init__(self, params={}, show_param=False):
         '''
         :param
-            @params['num_labels']
+            @params['n_tags']
             @params['use_cuda']
         '''
-        self.num_labels = params.get('num_labels', 45)
+        self.num_labels = params.get('n_tags', 45)
         self.use_cuda = params.get('use_cuda', False)
         self.model = BertForTokenClassification.from_pretrained('bert-base-chinese', num_labels=self.num_labels)
-        # self.model = BertForTokenClassification.from_pretrained('./result/')
-        if self.use_cuda:
-            print('use cuda=========================')
-        else:
-            print('not use cuda======================')
-        #     self.model.cuda()
+        self.model_type = 'BERT_NER'
+
+        if show_param:
+            self.show_model_param()
 
     def show_model_param(self):
         log('='*80, 0)
-        # log(f'embedding_dim: {self.embedding_dim}', 1)
+        log(f'model_type: {self.model_type}', 1)
         log(f'num_labels: {self.num_labels}', 1)
         log(f'use_cuda: {self.use_cuda}', 1)
-        # log(f'lstm_layer_num: {self.lstm_layer_num}', 1)
-        # log(f'dropout_prob: {self.dropout_prob}', 1)  
-        log('='*80, 0)   
+        log('='*80, 0)
 
     def _loss(self, x, y_ent, lens):
         '''
@@ -52,13 +50,6 @@ class BERT_NER:
         att_mask = self._generate_mask(lens, max_len=T)  #(batch_size, T)
         labels = self._to_tensor(y_ent, use_cuda)
 
-        # check_id = 0
-        # print(input_tensor[check_id])
-        # print(lens[check_id])
-        # print(att_mask[check_id])
-        # print(labels[check_id])
-        # # print(data_list[check_id]['input'])
-
         res_tuple = self.model(input_tensor, attention_mask=att_mask, labels=labels)
         loss, score = res_tuple[0], res_tuple[1]
         return loss
@@ -74,7 +65,6 @@ class BERT_NER:
         '''
         use_cuda = self.use_cuda
 
-        self.model.eval()
         T = x.shape[1]
         input_tensor = self._to_tensor(x, use_cuda)  #(batch_size, T)
         lens = self._to_tensor(lens, use_cuda)  #(batch_size)
@@ -82,9 +72,7 @@ class BERT_NER:
 
         labels = self.model(input_tensor, attention_mask=att_mask)[0]  #(batch_size, T, n_tags)
         label_max, label_argmax = labels.max(dim=2)
-        # print(label_argmax.shape)
         paths = label_argmax
-        # print(paths[0])
         return paths
 
     def save_model(self, path: str):
@@ -104,53 +92,80 @@ class BERT_NER:
     def train_model(self, data_loader: KGDataLoader, hyper_param={}, train_dataset=None, eval_dataset=None):
         '''
         :param
-            @hyper_param['learning_rate']
+            @hyper_param['learning_rate_upper']
+            @hyper_param['learning_rate_bert']
+            @hyper_param['bert_finetune']
             @hyper_param['EPOCH']
             @hyper_param['batch_size']
             @hyper_param['visualize_length']
             @hyper_param['result_dir']
             @hyper_param['isshuffle']
         '''
-        LEARNING_RATE = hyper_param.get('learning_rate', 5e-5)
+        LEARNING_RATE_bert = hyper_param.get('learning_rate_bert', 5e-5)
+        LEARNING_RATE_upper = hyper_param.get('learning_rate_upper', 1e-3)
+
+        bert_finetune = hyper_param.get('bert_finetune', True)
         EPOCH = hyper_param.get('EPOCH', 3)
         BATCH_SIZE = hyper_param.get('batch_size', 4)
         use_cuda = self.use_cuda
         visualize_length = hyper_param.get('visualize_length', 2)
         result_dir = hyper_param.get('result_dir', './result/')
-        # model_name = hyper_param.get('model_name', 'model.p')
         is_shuffle = hyper_param.get('isshuffle', True)
         DATA_TYPE = 'ent'
 
         if use_cuda:
             self.model.cuda()
 
-        train_data_mat_dict = data_loader.transform(train_dataset)
+        train_dataset = data_loader.dataset.train_dataset if train_dataset is None else train_dataset
+        # train_data_mat_dict = data_loader.transform(train_dataset, data_type=DATA_TYPE)
+        ## 保存预处理的文本，这样调参的时候可以直接读取，节约时间   *WARNING*
+        old_train_dict_path = os.path.join(result_dir, 'train_data_mat_dict.pkl')
+        if os.path.exists(old_train_dict_path):
+            train_data_mat_dict = data_loader.load_preprocessed_data(old_train_dict_path)
+            log('Reload preprocessed data successfully~')
+        else:
+            train_data_mat_dict = data_loader.transform(train_dataset, data_type=DATA_TYPE)
+            data_loader.save_preprocessed_data(old_train_dict_path, train_data_mat_dict)
+        ## 保存预处理的文本，这样调参的时候可以直接读取，节约时间   *WARNING*
         data_generator = Batch_Generator(train_data_mat_dict, batch_size=BATCH_SIZE, data_type=DATA_TYPE, isshuffle=is_shuffle)
 
-        # train_param = list(self.model.classifier.named_parameters())
-        # optimizer_grouped_parameters = [{'params': [p for n, p in param_optimizer]}]
-        train_param = self.model.classifier.parameters()
-        optimizer = torch.optim.Adam(train_param, lr=LEARNING_RATE)
-        
+        cls_param = self.model.classifier.parameters()
+        bert_param = self.model.bert.parameters()
+
+        if bert_finetune:
+            optimizer_group_paramters = [
+                {'params': cls_param, 'lr': LEARNING_RATE_upper}, 
+                {'params': bert_param, 'lr': LEARNING_RATE_bert}
+            ]
+            optimizer = torch.optim.Adam(optimizer_group_paramters)
+            log(f'****BERT_finetune, learning_rate_upper: {LEARNING_RATE_upper}, learning_rate_bert: {LEARNING_RATE_bert}', 0)
+        else:
+            optimizer = torch.optim.Adam(cls_param, lr=LEARNING_RATE_upper)
+            log(f'****BERT_fix, learning_rate_upper: {LEARNING_RATE_upper}', 0)
+
+        ##TODO:
+        scheduler = LambdaLR(optimizer, lr_lambda=my_lr_lambda)
+        # scheduler = transformers.optimization.get_cosine_schedule_with warmup(optimizer, num_warmup_steps=int(EPOCH*0.2), num_training_steps=EPOCH)
+
         all_cnt = len(train_data_mat_dict['cha_matrix'])
         log(f'Training start!', 0)
         loss_record = []
         score_record = []
-        eval_param = {'batch_size':100, 'issave':False, 'result_dir': result_dir}
+        max_score = 0
 
+        eval_hyper_param = {'batch_size':100, 'issave':False, 'result_dir': result_dir}
         for epoch in range(EPOCH):
             log(f'EPOCH: {epoch+1}/{EPOCH}', 0)
             self.model.train()
+                
             loss = 0.0
             for cnt, data_batch in enumerate(data_generator):
                 x, pos, _, _, y_ent, lens, data_list = data_batch  
 
-                # print(loss.shape)
                 loss_avg = self._loss(x, y_ent, lens)
                 optimizer.zero_grad()
                 loss_avg.backward()
                 optimizer.step()
-                # print(loss)
 
                 loss += loss_avg
                 if use_cuda:
@@ -158,29 +173,35 @@ class BERT_NER:
                 else:
                     loss_record.append(loss_avg.item())
 
-
                 if (cnt+1) % visualize_length == 0:
                     loss_cur = loss / visualize_length
                     log(f'[TRAIN] step: {(cnt+1)*BATCH_SIZE}/{all_cnt} | loss: {loss_cur:.4f}', 1)
                     loss = 0.0
 
-                    print(data_list[0]['input'])
-                    pre_paths = self._output(x, lens)
-                    print('predict-path')
-                    print(pre_paths[0])
-                    print('target-path')
-                    print(y_ent[0])
+                    # self.model.eval()
+                    # print(data_list[0]['input'])
+                    # pre_paths = self._output(x, lens)
+                    # print('predict-path')
+                    # print(pre_paths[0])
+                    # print('target-path')
+                    # print(y_ent[0])
+                    # self.model.train()
 
                 if cnt+1 % 100 == 0:
                     self.save_model(result_dir)
                     print('Checkpoint saved successfully')
                 # break
-            self.save_model(result_dir)
-            print('Checkpoint saved successfully')
-            
-            temp_score = self.eval_model(data_loader, data_set=eval_dataset, hyper_param=eval_param)
+
+            temp_score = self.eval_model(data_loader, data_set=eval_dataset, hyper_param=eval_hyper_param)
             score_record.append(temp_score)
+            scheduler.step()
+
+            if temp_score[2] > max_score:
+                max_score = temp_score[2]
+                self.save_model(result_dir)
+                print(f'Checkpoint saved successfully, current best socre is {max_score}')
             # break
+        log(f'the best score of the model is {max_score}')
         return loss_record, score_record
 
     @torch.no_grad()
@@ -212,13 +233,17 @@ class BERT_NER:
         if use_cuda:
             self.model.cuda()
 
-        if data_set is None:
-            test_dataset = data_loader.dataset.test_dataset
+        test_dataset = data_loader.dataset.test_dataset if data_set is None else data_set
+        # test_data_mat_dict = data_loader.transform(test_dataset, istest=True, data_type=DATA_TYPE)
+        ## 保存预处理的文本，这样调参的时候可以直接读取，节约时间   *WARNING*
+        old_test_dict_path = os.path.join(result_dir, 'test_data_mat_dict.pkl')
+        if os.path.exists(old_test_dict_path):
+            test_data_mat_dict = data_loader.load_preprocessed_data(old_test_dict_path)
+            log('Reload preprocessed data successfully~')
         else:
-            test_dataset = data_set
-
-        # test_data_mat_dict = data_loader.transform(test_dataset)
-        test_data_mat_dict = data_loader.transform(test_dataset, istest=True, data_type=DATA_TYPE)
+            test_data_mat_dict = data_loader.transform(test_dataset, istest=True, data_type=DATA_TYPE)
+            data_loader.save_preprocessed_data(old_test_dict_path, test_data_mat_dict)
+        ## 保存预处理的文本，这样调参的时候可以直接读取，节约时间   *WARNING*
         data_generator = Batch_Generator(test_data_mat_dict, batch_size=BATCH_SIZE, data_type=DATA_TYPE, isshuffle=False)
         
         self.model.eval()   #disable dropout layer and the bn layer
@@ -257,7 +282,6 @@ class BERT_NER:
             log(f'save the predict result in {save_file}')
         return result
 
-
     @torch.no_grad()
     def eval_model(self, data_loader: KGDataLoader, data_set=None, hyper_param={}):
         '''
@@ -287,7 +311,6 @@ class BERT_NER:
         if use_cuda:
             self.model.cuda()
         eva_data_set = data_loader.dataset.dev_dataset if data_set is None else data_set
-
         pred_result = self.predict(data_loader, eva_data_set, hyper_param) ###list(dict), 预测结果
         target = eva_data_set  ###list(dict)  AutoKGDataset, 真实结果
 
@@ -373,10 +396,10 @@ if __name__ == '__main__':
     mymodel.load_model('./result/')
 
     data_set = AutoKGDataset('./d1/')
-    # train_dataset = data_set.train_dataset[:20]
-    # eval_dataset = data_set.dev_dataset[:10]
-    train_dataset = data_set.train_dataset
-    eval_dataset = data_set.dev_dataset
+    train_dataset = data_set.train_dataset[:20]
+    eval_dataset = data_set.dev_dataset[:10]
+    # train_dataset = data_set.train_dataset
+    # eval_dataset = data_set.dev_dataset
 
     os.makedirs('result', exist_ok=True)
     data_loader = KGDataLoader(data_set, rebuild=False, temp_dir='result/')

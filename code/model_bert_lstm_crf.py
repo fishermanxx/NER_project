@@ -16,6 +16,9 @@ import transformers
 from utils import KGDataLoader, Batch_Generator
 from utils import log, show_result
 
+from torch.optim.lr_scheduler import LambdaLR
+from utils import my_lr_lambda
+
 import os
 import math
 import json
@@ -370,8 +373,9 @@ class BERT_LSTM_CRF(nn.Module):
         self.start_idx = self.params['start_idx']
         self.end_idx = self.params['end_idx']
         self.use_cuda = self.params['use_cuda']
-        self.dropout_prob = self.params.get('dropout_prob', 0.05)
+        self.dropout_prob = self.params.get('dropout_prob', 0)
         self.lstm_layer_num = self.params.get('lstm_layer_num', 1)
+        self.model_type = 'BERT_LSTM_CRF'
 
         self.build_model()
         self.reset_parameters()
@@ -380,8 +384,10 @@ class BERT_LSTM_CRF(nn.Module):
 
     def show_model_param(self):
         log('='*80, 0)
+        log(f'model_type: {self.model_type}', 1)
         log(f'embedding_dim: {self.embedding_dim}', 1)
         log(f'hidden_dim: {self.hidden_dim}', 1)
+        log(f'num_labels: {self.n_tags}', 1)
         log(f'use_cuda: {self.use_cuda}', 1)
         log(f'lstm_layer_num: {self.lstm_layer_num}', 1)
         log(f'dropout_prob: {self.dropout_prob}', 1)  
@@ -501,7 +507,9 @@ class BERT_LSTM_CRF(nn.Module):
             @hyper_param: (dict)
                 @hyper_param['EPOCH']
                 @hyper_param['batch_size']
-                @hyper_param['learning_rate']
+                @hyper_param['learning_rate_upper']
+                @hyper_param['learning_rate_bert']
+                @hyper_param['bert_finetune']
                 @hyper_param['visualize_length']   #num of batches between two check points
                 @hyper_param['isshuffle']
                 @hyper_param['result_dir']
@@ -513,19 +521,18 @@ class BERT_LSTM_CRF(nn.Module):
         use_cuda = self.use_cuda if use_cuda is None else use_cuda
         EPOCH = hyper_param.get('EPOCH', 3)
         BATCH_SIZE = hyper_param.get('batch_size', 4)
-        # LEARNING_RATE = hyper_param.get('learning_rate', 1e-2)
-        LEARNING_RATE = 1e-2
-        print(f'learning_rate: {LEARNING_RATE}')
+        LEARNING_RATE_upper = hyper_param.get('learning_rate_upper', 1e-2)
+        LEARNING_RATE_bert = hyper_param.get('learning_rate_bert', 5e-5)
+        bert_finetune = hyper_param.get('bert_finetune', True)
+        
         visualize_length = hyper_param.get('visualize_length', 10)
         result_dir = hyper_param.get('result_dir', './result/')
         model_name = hyper_param.get('model_name', 'model.p')
         is_shuffle = hyper_param.get('isshuffle', True)
         DATA_TYPE = 'ent'
         
-
         train_dataset = data_loader.dataset.train_dataset if train_dataset is None else train_dataset
         # train_data_mat_dict = data_loader.transform(train_dataset, data_type=DATA_TYPE)
-
         ## 保存预处理的文本，这样调参的时候可以直接读取，节约时间   *WARNING*
         old_train_dict_path = os.path.join(result_dir, 'train_data_mat_dict.pkl')
         if os.path.exists(old_train_dict_path):
@@ -535,7 +542,6 @@ class BERT_LSTM_CRF(nn.Module):
             train_data_mat_dict = data_loader.transform(train_dataset, data_type=DATA_TYPE)
             data_loader.save_preprocessed_data(old_train_dict_path, train_data_mat_dict)
         ## 保存预处理的文本，这样调参的时候可以直接读取，节约时间   *WARNING*
-
         data_generator = Batch_Generator(train_data_mat_dict, batch_size=BATCH_SIZE, data_type=DATA_TYPE, isshuffle=is_shuffle)
 
         crf_param = list(self.crf.parameters())
@@ -543,13 +549,20 @@ class BERT_LSTM_CRF(nn.Module):
         lstm_param = list(self.lstm.parameters())
         bert_param = list(self.bert.parameters())
 
-        # optimizer = torch.optim.Adam(self.parameters(), lr=LEARNING_RATE)
-
-        optimizer = torch.optim.Adam(crf_param+fc_param+lstm_param, lr=LEARNING_RATE)
-        # optimizer_group_paramters = [
-        #     {'param': crf_param + fc_param + lstm_param, 'lr': LEARNING_RATE}, 
-        #     {'param': bert_param, 'lr': 5e-5}
-        # ]
+        if bert_finetune:
+            optimizer_group_paramters = [
+                {'params': crf_param + fc_param + lstm_param, 'lr': LEARNING_RATE_upper}, 
+                {'params': bert_param, 'lr': LEARNING_RATE_bert}
+            ]
+            optimizer = torch.optim.Adam(optimizer_group_paramters)
+            log(f'****BERT_finetune, learning_rate_upper: {LEARNING_RATE_upper}, learning_rate_bert: {LEARNING_RATE_bert}', 0)
+        else:
+            optimizer = torch.optim.Adam(crf_param+fc_param+lstm_param, lr=LEARNING_RATE_upper)
+            log(f'****BERT_fix, learning_rate_upper: {LEARNING_RATE_upper}', 0)
+        
+        ##TODO:
+        scheduler = LambdaLR(optimizer, lr_lambda=my_lr_lambda)
+        # scheduler = transformers.optimization.get_cosine_schedule_with warmup(optimizer, num_warmup_steps=int(EPOCH*0.2), num_training_steps=EPOCH)
 
         if use_cuda:
             print('use cuda=========================')
@@ -560,10 +573,12 @@ class BERT_LSTM_CRF(nn.Module):
         log(f'{model_name} Training start!', 0)
         loss_record = []
         score_record = []
+        max_score = 0
 
         evel_param = {'batch_size':100, 'issave':False, 'result_dir': result_dir}
         for epoch in range(EPOCH):
             self.train()
+
             log(f'EPOCH: {epoch+1}/{EPOCH}', 0)
             loss = 0.0
             for cnt, data_batch in enumerate(data_generator):
@@ -593,20 +608,23 @@ class BERT_LSTM_CRF(nn.Module):
                     # print(pre_paths[0])
                     # print('target-path')
                     # print(y_ent[0])
-                    # self.train()                    
+                    # self.train()        
 
-                if cnt+1 % 100 == 0:
-                    save_path = os.path.join(result_dir, model_name)
-                    self.save_model(save_path)
-                    print('Checkpoint saved successfully')
-
-            save_path = os.path.join(result_dir, model_name)
-            self.save_model(save_path)
-            print('Checkpoint saved successfully')
+                # if cnt+1 % 100 == 0:
+                #     save_path = os.path.join(result_dir, model_name)
+                #     self.save_model(save_path)
+                #     print('Checkpoint saved successfully')
 
             temp_score = self.eval_model(data_loader, data_set=eval_dataset, hyper_param=evel_param, use_cuda=use_cuda)
             score_record.append(temp_score)
-
+            scheduler.step()
+            
+            if temp_score[2] > max_score:
+                max_score = temp_score[2]
+                save_path = os.path.join(result_dir, model_name)
+                self.save_model(save_path)
+                print(f'Checkpoint saved successfully, current best socre is {max_score}')
+        log(f'the best score of the model is {max_score}')
         return loss_record, score_record
 
     @torch.no_grad()

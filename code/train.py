@@ -109,9 +109,11 @@ def _train(mymodel, args, data_loader, train_dataset=None, eval_dataset=None, RE
 
     if use_cuda:
         train_param = {
-            'EPOCH': 1,         #45
+            'EPOCH': 30,         #45
             'batch_size': 64,    #512
-            'learning_rate': 5e-5,
+            'learning_rate_bert': 5e-5,
+            'learning_rate_upper': 5e-5,
+            'bert_finetune': False,
             'visualize_length': 20, #10
             'isshuffle': True,
             'result_dir': args.result_dir,
@@ -122,7 +124,8 @@ def _train(mymodel, args, data_loader, train_dataset=None, eval_dataset=None, RE
         train_param = {
             'EPOCH': CPU_EPOCH,         #45
             'batch_size': CPU_BATCHSIZE,    #512
-            'learning_rate': 5e-5,
+            'learning_rate_bert': 5e-5,
+            'learning_rate_upper': 1e-3,
             'visualize_length': CPU_VISUAL, #10
             'isshuffle': True,
             'result_dir': args.result_dir,
@@ -171,7 +174,7 @@ def _predict(mymodel, args, data_loader, data_set=None, RELOAD_MODEL=None, use_c
     timer = Timer()
     timer.set(args.time_budget)
     with timer.time_limit('predict'):
-        mymodel.predict(data_loader, data_set=data_set, hyper_param=hyper_param, use_cuda=use_cuda)   
+        mymodel.predict(data_loader, data_set=data_set, hyper_param=hyper_param)   
 
 def _eval(mymodel: BLSTM_CRF, args, data_loader, data_set=None, RELOAD_MODEL=None, use_cuda=False):
     old_model_path = os.path.join(args.result_dir, RELOAD_MODEL)
@@ -192,7 +195,7 @@ def _eval(mymodel: BLSTM_CRF, args, data_loader, data_set=None, RELOAD_MODEL=Non
     timer = Timer()
     timer.set(args.time_budget)
     with timer.time_limit('eval'):
-        mymodel.eval_model(data_loader, data_set, hyper_param, use_cuda)
+        mymodel.eval_model(data_loader, data_set, hyper_param)
 
 def main():
     LOGGER.info("===== Start program")
@@ -226,13 +229,13 @@ def main():
         'end_idx': data_loader.ent_seq_map_dict[data_loader.END_TAG],  ## <end> tag index for entity tag seq
         'use_cuda':args.use_cuda,
         'dropout_prob': 0,
-        'lstm_layer_num': 1,
-        'num_labels': len(data_loader.ent_seq_map_dict)
+        'lstm_layer_num': 1
+        # 'num_labels': len(data_loader.ent_seq_map_dict)
     }
     # mymodel = BLSTM_CRF(model_params, show_param=True)   
-    mymodel = BERT_LSTM_CRF(model_params, show_param=True) 
+    # mymodel = BERT_LSTM_CRF(model_params, show_param=True) 
     # mymodel = BERT_MLP(model_params, show_param=True)
-    # mymodel = BERT_NER(model_params, show_param=True)
+    mymodel = BERT_NER(model_params, show_param=True)
 
     if args.use_cuda:
         train_dataset = dataset.train_dataset
@@ -245,10 +248,12 @@ def main():
 
     if args.mode == 'train':
         LOGGER.info('===== Start Train')
-        _train(mymodel, args, data_loader, train_dataset=train_dataset, eval_dataset=eval_dataset, RELOAD_MODEL='model_test.p', use_cuda=args.use_cuda)
+        _train(mymodel, args, data_loader, train_dataset=train_dataset, eval_dataset=eval_dataset, RELOAD_MODEL='', use_cuda=args.use_cuda)
+        # _train(mymodel, args, data_loader, train_dataset=train_dataset, eval_dataset=eval_dataset, RELOAD_MODEL='model_test.p', use_cuda=args.use_cuda)
 
         LOGGER.info('===== Start Eval')
-        _eval(mymodel, args, data_loader, data_set=eval_dataset, RELOAD_MODEL='model_test.p', use_cuda=args.use_cuda)
+        _eval(mymodel, args, data_loader, data_set=eval_dataset, RELOAD_MODEL='', use_cuda=args.use_cuda)
+        # _eval(mymodel, args, data_loader, data_set=eval_dataset, RELOAD_MODEL='model_test.p', use_cuda=args.use_cuda)
 
     if args.mode == 'eval':
         LOGGER.info('===== Start Eval')

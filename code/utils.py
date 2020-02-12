@@ -14,6 +14,9 @@ import torch.nn as nn
 
 from dataset import AutoKGDataset
 
+def my_lr_lambda(epoch):
+    return 1/(1+0.05*epoch)
+
 def show_result(datalist, checklist):
     for i in checklist:
         data = datalist[i]
@@ -184,7 +187,7 @@ class KGDataLoader(BaseLoader):
         self.entity_type_dict = self.embedding_info_dicts['entity_type_dict'] ## 实体类别字典
         self.inverse_entity_type_dict = self._inverse_dict(self.entity_type_dict)
 
-        # self.character_location_dict = self.embedding_info_dicts['character_location_dict']  TODO:
+        # self.character_location_dict = self.embedding_info_dicts['character_location_dict']  #TODO:choose the pretrained dict
         self.character_location_dict = load_bert_pretrained_dict()
 
         self.inverse_character_location_dict = self._inverse_dict(self.character_location_dict)
