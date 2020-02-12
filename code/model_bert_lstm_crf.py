@@ -430,8 +430,8 @@ class BERT_LSTM_CRF(nn.Module):
 
         words_tensor = self._to_tensor(x, use_cuda)  #(batch_size, T)
         # embeds = self.word_embeds(words_tensor)  #(batch_size, T, n_embed)
-        lens = self._to_tensor(lens)
-        att_mask = self._generate_mask(lens, max_len=T).cuda()
+        lens = self._to_tensor(lens, use_cuda)
+        att_mask = self._generate_mask(lens, max_len=T)
         embeds = self.bert(words_tensor, attention_mask=att_mask)[0]  #(batch_size, T, n_embed)
         
 
@@ -790,7 +790,7 @@ class BERT_LSTM_CRF(nn.Module):
         return arr
 
     @staticmethod
-    def _generate_mask(lens, max_len=None, use_cuda=False):
+    def _generate_mask(lens, max_len=None):
         '''
         返回一个mask, 遮住<pad>部分的无用信息.
         :param
@@ -799,12 +799,12 @@ class BERT_LSTM_CRF(nn.Module):
         :return 
             @mask: (batch_size, max_len)
         '''
-        use_cuda = self.use_cuda if use_cuda is None else use_cuda
+        # use_cuda = self.use_cuda if use_cuda is None else use_cuda
         batch_size = lens.shape[0]
         if max_len is None:
             max_len = lens.max()
         ranges = torch.arange(0, max_len).long()  #(max_len)
-        if use_cuda:
+        if lens.is_cuda:
             ranges = ranges.cuda()
         ranges = ranges.unsqueeze(0).expand(batch_size, max_len)   #(batch_size, max_len)
         lens_exp = lens.unsqueeze(1).expand_as(ranges)  #(batch_size, max_len)
