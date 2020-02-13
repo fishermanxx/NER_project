@@ -519,6 +519,10 @@ class BERT_LSTM_CRF(nn.Module):
             @score_record
         '''
         use_cuda = self.use_cuda if use_cuda is None else use_cuda
+        if use_cuda:
+            print('use cuda=========================')
+            self.cuda()
+
         EPOCH = hyper_param.get('EPOCH', 3)
         BATCH_SIZE = hyper_param.get('batch_size', 4)
         LEARNING_RATE_upper = hyper_param.get('learning_rate_upper', 1e-2)
@@ -563,10 +567,6 @@ class BERT_LSTM_CRF(nn.Module):
         ##TODO:
         scheduler = LambdaLR(optimizer, lr_lambda=my_lr_lambda)
         # scheduler = transformers.optimization.get_cosine_schedule_with warmup(optimizer, num_warmup_steps=int(EPOCH*0.2), num_training_steps=EPOCH)
-
-        if use_cuda:
-            print('use cuda=========================')
-            self.cuda()
         
 
         all_cnt = len(train_data_mat_dict['cha_matrix'])
@@ -628,7 +628,7 @@ class BERT_LSTM_CRF(nn.Module):
         return loss_record, score_record
 
     @torch.no_grad()
-    def predict(self, data_loader: KGDataLoader, data_set=None, hyper_param={}, use_cuda=False):
+    def predict(self, data_loader: KGDataLoader, data_set=None, hyper_param={}, use_cuda=None):
         '''
         预测出 test_data_mat_dict['y_ent_matrix']中的内容，重新填写进该matrix, 未预测之前都是0
         :param
@@ -648,6 +648,7 @@ class BERT_LSTM_CRF(nn.Module):
                     e['entity_index']['begin']:13
                     e['entity_index']['end']:24
         '''
+        use_cuda = self.use_cuda if use_cuda is None else use_cuda
         BATCH_SIZE = hyper_param.get('batch_size', 64)
         ISSAVE = hyper_param.get('issave', False)
         result_dir = hyper_param.get('result_dir', './result/')
@@ -709,7 +710,7 @@ class BERT_LSTM_CRF(nn.Module):
         return result
 
     @torch.no_grad()
-    def eval_model(self, data_loader: KGDataLoader, data_set=None, hyper_param={}, use_cuda=False):
+    def eval_model(self, data_loader: KGDataLoader, data_set=None, hyper_param={}, use_cuda=None):
         '''
         :param
             @data_loader: (KGDataLoader),
@@ -722,6 +723,7 @@ class BERT_LSTM_CRF(nn.Module):
             @recall_s, 
             @f1_s
         '''
+        use_cuda = self.use_cuda if use_cuda is None else use_cuda
         def dict2str(d):
             ## 将entity 从字典形式转化为str形式方便比较
             res = d['entity']+':'+d['entity_type']+':'+str(d['entity_index']['begin'])+'-'+str(d['entity_index']['end'])

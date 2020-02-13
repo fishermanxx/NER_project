@@ -87,6 +87,8 @@ class BERT_CRF(nn.Module):
             @lstm_feature: (batch_size, T, n_tags) -- 类似于eject score, torch.tensor
         '''
         use_cuda = self.use_cuda if use_cuda is None else use_cuda
+
+        # print(f'get_features: use_cuda - {use_cuda}')
         batch_size, T = x.shape
 
         words_tensor = self._to_tensor(x, use_cuda)  #(batch_size, T)
@@ -97,7 +99,7 @@ class BERT_CRF(nn.Module):
         ##FC layer
         feature = self.hidden2tag(embeds) #(batch_size, T, n_tags)
         feature = torch.tanh(feature)
-        print(feature.shape)
+        # print(feature.shape)
         return feature
 
     def _loss(self, x, y_ent, lens, use_cuda=None):
@@ -167,6 +169,10 @@ class BERT_CRF(nn.Module):
             @score_record
         '''
         use_cuda = self.use_cuda if use_cuda is None else use_cuda
+        if use_cuda:
+            print('use cuda=========================')
+            self.cuda()
+
         EPOCH = hyper_param.get('EPOCH', 3)
         BATCH_SIZE = hyper_param.get('batch_size', 4)
         LEARNING_RATE_upper = hyper_param.get('learning_rate_upper', 1e-2)
@@ -194,27 +200,23 @@ class BERT_CRF(nn.Module):
 
         crf_param = list(self.crf.parameters())
         fc_param = list(self.hidden2tag.parameters())
-        lstm_param = list(self.lstm.parameters())
+        # lstm_param = list(self.lstm.parameters())
         bert_param = list(self.bert.parameters())
 
         if bert_finetune:
             optimizer_group_paramters = [
-                {'params': crf_param + fc_param + lstm_param, 'lr': LEARNING_RATE_upper}, 
+                {'params': crf_param + fc_param, 'lr': LEARNING_RATE_upper}, 
                 {'params': bert_param, 'lr': LEARNING_RATE_bert}
             ]
             optimizer = torch.optim.Adam(optimizer_group_paramters)
             log(f'****BERT_finetune, learning_rate_upper: {LEARNING_RATE_upper}, learning_rate_bert: {LEARNING_RATE_bert}', 0)
         else:
-            optimizer = torch.optim.Adam(crf_param+fc_param+lstm_param, lr=LEARNING_RATE_upper)
+            optimizer = torch.optim.Adam(crf_param+fc_param, lr=LEARNING_RATE_upper)
             log(f'****BERT_fix, learning_rate_upper: {LEARNING_RATE_upper}', 0)
         
         ##TODO:
         scheduler = LambdaLR(optimizer, lr_lambda=my_lr_lambda)
         # scheduler = transformers.optimization.get_cosine_schedule_with warmup(optimizer, num_warmup_steps=int(EPOCH*0.2), num_training_steps=EPOCH)
-
-        if use_cuda:
-            print('use cuda=========================')
-            self.cuda()
         
 
         all_cnt = len(train_data_mat_dict['cha_matrix'])
@@ -276,7 +278,7 @@ class BERT_CRF(nn.Module):
         return loss_record, score_record
 
     @torch.no_grad()
-    def predict(self, data_loader: KGDataLoader, data_set=None, hyper_param={}, use_cuda=False):
+    def predict(self, data_loader: KGDataLoader, data_set=None, hyper_param={}, use_cuda=None):
         '''
         预测出 test_data_mat_dict['y_ent_matrix']中的内容，重新填写进该matrix, 未预测之前都是0
         :param
@@ -301,6 +303,11 @@ class BERT_CRF(nn.Module):
         result_dir = hyper_param.get('result_dir', './result/')
         DATA_TYPE = 'ent'
 
+        use_cuda = self.use_cuda if use_cuda is None else use_cuda
+        if use_cuda:
+            print('use cuda=========================')
+            self.cuda()
+        self.eval()   #disable dropout layer and the bn layer
         
         test_dataset = data_loader.dataset.test_dataset if data_set is None else data_set
         # test_data_mat_dict = data_loader.transform(test_dataset, istest=True, data_type=DATA_TYPE)
@@ -316,11 +323,6 @@ class BERT_CRF(nn.Module):
         ## 保存预处理的文本，这样调参的时候可以直接读取，节约时间   *WARNING*
 
         data_generator = Batch_Generator(test_data_mat_dict, batch_size=BATCH_SIZE, data_type=DATA_TYPE, isshuffle=False)
-        
-        if use_cuda:
-            print('use cuda=========================')
-            self.cuda()
-        self.eval()   #disable dropout layer and the bn layer
 
         total_output_ent = []
         all_cnt = len(test_data_mat_dict['cha_matrix'])
@@ -357,7 +359,7 @@ class BERT_CRF(nn.Module):
         return result
 
     @torch.no_grad()
-    def eval_model(self, data_loader: KGDataLoader, data_set=None, hyper_param={}, use_cuda=False):
+    def eval_model(self, data_loader: KGDataLoader, data_set=None, hyper_param={}, use_cuda=None):
         '''
         :param
             @data_loader: (KGDataLoader),
@@ -381,6 +383,11 @@ class BERT_CRF(nn.Module):
             f1_s = round(2*precision_s*recall_s / (precision_s + recall_s + 1e-8), 3)
             return precision_s, recall_s, f1_s
 
+        use_cuda = self.use_cuda if use_cuda is None else use_cuda
+        if use_cuda:
+            print('use cuda=========================')
+            self.cuda()
+        self.eval()   #disable dropout layer and the bn layer
 
         eva_data_set = data_loader.dataset.dev_dataset if data_set is None else data_set
 
@@ -474,7 +481,7 @@ if __name__ == '__main__':
         'num_labels': 45
     }
     
-    mymodel = BERT_CRF(model_params, show_param=True) 
+    mymodel = BERT_CRF(model_params, show_param=True).cuda()
 
     data_set = AutoKGDataset('./d1/')
     train_dataset = data_set.train_dataset[:20]

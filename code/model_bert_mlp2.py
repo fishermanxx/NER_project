@@ -5,19 +5,22 @@ from utils import log, show_result
 import os
 os.environ['CUDA_VISIBLE_DEVICES'] = '7'
 import torch
+from torch import nn
+import json
 import numpy as np
 from transformers import BertForTokenClassification, BertTokenizer
 
 from torch.optim.lr_scheduler import LambdaLR
 from utils import my_lr_lambda
 
-class BERT_NER:
+class BERT_NER(nn.Module):
     def __init__(self, params={}, show_param=False):
         '''
         :param
             @params['n_tags']
             @params['use_cuda']
         '''
+        super(BERT_NER, self).__init__()
         self.num_labels = params.get('n_tags', 45)
         self.use_cuda = params.get('use_cuda', False)
         self.model = BertForTokenClassification.from_pretrained('bert-base-chinese', num_labels=self.num_labels)
@@ -76,18 +79,30 @@ class BERT_NER:
         return paths
 
     def save_model(self, path: str):
-        self.model.save_pretrained(path)
+        torch.save(self.state_dict(), path)
+
+    # def save_model(self, path: str):
+    #     self.model.save_pretrained(path)
 
     def load_model(self, path: str):
         if os.path.exists(path):
-            # self.model.from_pretrained(path)
-            self.model = BertForTokenClassification.from_pretrained(path)
             if self.use_cuda:
-                self.model.cuda()
-            print('reload model successfully(in_model)~')
+                self.load_state_dict(torch.load(path))
+            else:
+                self.load_state_dict(torch.load(path, map_location=torch.device('cpu')))
         else:
-            # print('build new model')
             pass
+
+    # def load_model(self, path: str):
+    #     if os.path.exists(path):
+    #         # self.model.from_pretrained(path)
+    #         self.model = BertForTokenClassification.from_pretrained(path)
+    #         if self.use_cuda:
+    #             self.model.cuda()
+    #         print('reload model successfully(in_model)~')
+    #     else:
+    #         # print('build new model')
+    #         pass
 
     def train_model(self, data_loader: KGDataLoader, hyper_param={}, train_dataset=None, eval_dataset=None):
         '''
@@ -100,6 +115,7 @@ class BERT_NER:
             @hyper_param['visualize_length']
             @hyper_param['result_dir']
             @hyper_param['isshuffle']
+            @hyper_param['model_name']
         '''
         LEARNING_RATE_bert = hyper_param.get('learning_rate_bert', 5e-5)
         LEARNING_RATE_upper = hyper_param.get('learning_rate_upper', 1e-3)
@@ -111,6 +127,7 @@ class BERT_NER:
         visualize_length = hyper_param.get('visualize_length', 2)
         result_dir = hyper_param.get('result_dir', './result/')
         is_shuffle = hyper_param.get('isshuffle', True)
+        model_name = hyper_param.get('model_name', 'model.p')
         DATA_TYPE = 'ent'
 
         if use_cuda:
@@ -148,7 +165,7 @@ class BERT_NER:
         # scheduler = transformers.optimization.get_cosine_schedule_with warmup(optimizer, num_warmup_steps=int(EPOCH*0.2), num_training_steps=EPOCH)
 
         all_cnt = len(train_data_mat_dict['cha_matrix'])
-        log(f'Training start!', 0)
+        log(f'{model_name} Training start!', 0)
         loss_record = []
         score_record = []
         max_score = 0
@@ -187,9 +204,9 @@ class BERT_NER:
                     # print(y_ent[0])
                     # self.model.train()
 
-                if cnt+1 % 100 == 0:
-                    self.save_model(result_dir)
-                    print('Checkpoint saved successfully')
+                # if cnt+1 % 100 == 0:
+                #     self.save_model(result_dir)
+                #     print('Checkpoint saved successfully')
                 # break
 
             temp_score = self.eval_model(data_loader, data_set=eval_dataset, hyper_param=eval_hyper_param)
@@ -198,7 +215,8 @@ class BERT_NER:
 
             if temp_score[2] > max_score:
                 max_score = temp_score[2]
-                self.save_model(result_dir)
+                save_path = os.path.join(result_dir, model_name)
+                self.save_model(save_path)
                 print(f'Checkpoint saved successfully, current best socre is {max_score}')
             # break
         log(f'the best score of the model is {max_score}')

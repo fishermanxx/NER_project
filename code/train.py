@@ -6,6 +6,7 @@ from ent_model_dropout import BLSTM_CRF
 from model_bert_lstm_crf import BERT_LSTM_CRF
 from model_bert_mlp import BERT_MLP
 from model_bert_mlp2 import BERT_NER
+from model_bert_crf import BERT_CRF
 
 from common import get_logger, Timer
 
@@ -100,20 +101,24 @@ def plot_img(arr, filename='img.png'):
     plt.savefig(filename)
 
 def _train(mymodel, args, data_loader, train_dataset=None, eval_dataset=None, RELOAD_MODEL=None, use_cuda=False):
-    old_model_path = os.path.join(args.result_dir, RELOAD_MODEL)
-    if RELOAD_MODEL is not None and os.path.exists(old_model_path):
-        mymodel.load_model(old_model_path)
-        LOGGER.info("Reload model successfully~")
+    if RELOAD_MODEL is None:
+        LOGGER.info(f'Rebuild model')
     else:
-        LOGGER.info(f'There is no such file in {old_model_path}, Rebuild model')
+        old_model_path = os.path.join(args.result_dir, RELOAD_MODEL)
+        if os.path.exists(old_model_path):
+            mymodel.load_model(old_model_path)
+            LOGGER.info("Reload model successfully~")
+        else:
+            LOGGER.info(f'There is no such file in {old_model_path}, Rebuild model')
 
+    ##TODO:
     if use_cuda:
         train_param = {
             'EPOCH': 30,         #45
             'batch_size': 64,    #512
             'learning_rate_bert': 5e-5,
-            'learning_rate_upper': 5e-5,
-            'bert_finetune': False,
+            'learning_rate_upper': 5e-3,
+            'bert_finetune': True,
             'visualize_length': 20, #10
             'isshuffle': True,
             'result_dir': args.result_dir,
@@ -232,10 +237,12 @@ def main():
         'lstm_layer_num': 1
         # 'num_labels': len(data_loader.ent_seq_map_dict)
     }
+    ##TODO:
     # mymodel = BLSTM_CRF(model_params, show_param=True)   
-    # mymodel = BERT_LSTM_CRF(model_params, show_param=True) 
+    mymodel = BERT_LSTM_CRF(model_params, show_param=True) 
     # mymodel = BERT_MLP(model_params, show_param=True)
-    mymodel = BERT_NER(model_params, show_param=True)
+    # mymodel = BERT_NER(model_params, show_param=True)
+    # mymodel = BERT_CRF(model_params, show_param=True)
 
     if args.use_cuda:
         train_dataset = dataset.train_dataset
@@ -248,12 +255,14 @@ def main():
 
     if args.mode == 'train':
         LOGGER.info('===== Start Train')
-        _train(mymodel, args, data_loader, train_dataset=train_dataset, eval_dataset=eval_dataset, RELOAD_MODEL='', use_cuda=args.use_cuda)
-        # _train(mymodel, args, data_loader, train_dataset=train_dataset, eval_dataset=eval_dataset, RELOAD_MODEL='model_test.p', use_cuda=args.use_cuda)
+        # _train(mymodel, args, data_loader, train_dataset=train_dataset, eval_dataset=eval_dataset, RELOAD_MODEL=None, use_cuda=args.use_cuda)
+        # _train(mymodel, args, data_loader, train_dataset=train_dataset, eval_dataset=eval_dataset, RELOAD_MODEL='', use_cuda=args.use_cuda)
+        _train(mymodel, args, data_loader, train_dataset=train_dataset, eval_dataset=eval_dataset, RELOAD_MODEL='model_test.p', use_cuda=args.use_cuda)
 
         LOGGER.info('===== Start Eval')
-        _eval(mymodel, args, data_loader, data_set=eval_dataset, RELOAD_MODEL='', use_cuda=args.use_cuda)
-        # _eval(mymodel, args, data_loader, data_set=eval_dataset, RELOAD_MODEL='model_test.p', use_cuda=args.use_cuda)
+        # _eval(mymodel, args, data_loader, data_set=eval_dataset, RELOAD_MODEL='', use_cuda=args.use_cuda)
+        # _eval(mymodel, args, data_loader, data_set=eval_dataset, RELOAD_MODEL='', use_cuda=args.use_cuda)
+        _eval(mymodel, args, data_loader, data_set=eval_dataset, RELOAD_MODEL='model_test.p', use_cuda=args.use_cuda)
 
     if args.mode == 'eval':
         LOGGER.info('===== Start Eval')

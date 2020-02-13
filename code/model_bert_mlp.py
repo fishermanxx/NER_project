@@ -250,10 +250,10 @@ class BERT_MLP(nn.Module):
                     # print(y_ent[0])
                     # self.train()
 
-                if cnt+1 % 100 == 0:
-                    save_path = os.path.join(result_dir, model_name)
-                    self.save_model(save_path)
-                    print('Checkpoint saved successfully')
+                # if cnt+1 % 100 == 0:
+                #     save_path = os.path.join(result_dir, model_name)
+                #     self.save_model(save_path)
+                #     print('Checkpoint saved successfully')
 
             temp_score = self.eval_model(data_loader, data_set=eval_dataset, hyper_param=eval_param, use_cuda=use_cuda)
             score_record.append(temp_score)
