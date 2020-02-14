@@ -2,7 +2,7 @@ from dataset import AutoKGDataset
 from utils import KGDataLoader, Batch_Generator
 from utils import show_metadata, show_dict_info
 # from ent_model import BLSTM_CRF
-from ent_model_dropout import BLSTM_CRF
+from model_lstm_crf import BLSTM_CRF
 from model_bert_lstm_crf import BERT_LSTM_CRF
 from model_bert_mlp import BERT_MLP
 from model_bert_mlp2 import BERT_NER
@@ -17,11 +17,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import argparse
 
-CPU_TRAIN = 1000
-CPU_EVAL = 400
+CPU_TRAIN = 20
+CPU_EVAL = 10
 CPU_EPOCH = 3
 CPU_BATCHSIZE = 4
-CPU_VISUAL = 20
+CPU_VISUAL = 2
 
 VERBOSITY_LEVEL = 'INFO'
 LOGGER = get_logger(VERBOSITY_LEVEL, __file__)
@@ -114,7 +114,7 @@ def _train(mymodel, args, data_loader, train_dataset=None, eval_dataset=None, RE
     ##TODO:
     if use_cuda:
         train_param = {
-            'EPOCH': 45,         #45
+            'EPOCH': 5,         #45
             'batch_size': 64,    #512
             'learning_rate_bert': 5e-5,
             'learning_rate_upper': 5e-3,
@@ -131,6 +131,7 @@ def _train(mymodel, args, data_loader, train_dataset=None, eval_dataset=None, RE
             'batch_size': CPU_BATCHSIZE,    #512
             'learning_rate_bert': 5e-5,
             'learning_rate_upper': 1e-3,
+            'bert_finetune': False,
             'visualize_length': CPU_VISUAL, #10
             'isshuffle': True,
             'result_dir': args.result_dir,
@@ -239,10 +240,10 @@ def main():
     }
     ##TODO:
     # mymodel = BLSTM_CRF(model_params, show_param=True)   
-    # mymodel = BERT_LSTM_CRF(model_params, show_param=True) 
+    mymodel = BERT_LSTM_CRF(model_params, show_param=True) 
     # mymodel = BERT_MLP(model_params, show_param=True)
     # mymodel = BERT_NER(model_params, show_param=True)
-    mymodel = BERT_CRF(model_params, show_param=True)
+    # mymodel = BERT_CRF(model_params, show_param=True)
 
     if args.use_cuda:
         train_dataset = dataset.train_dataset
