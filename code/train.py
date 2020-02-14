@@ -114,7 +114,7 @@ def _train(mymodel, args, data_loader, train_dataset=None, eval_dataset=None, RE
     ##TODO:
     if use_cuda:
         train_param = {
-            'EPOCH': 30,         #45
+            'EPOCH': 45,         #45
             'batch_size': 64,    #512
             'learning_rate_bert': 5e-5,
             'learning_rate_upper': 5e-3,
@@ -239,10 +239,10 @@ def main():
     }
     ##TODO:
     # mymodel = BLSTM_CRF(model_params, show_param=True)   
-    mymodel = BERT_LSTM_CRF(model_params, show_param=True) 
+    # mymodel = BERT_LSTM_CRF(model_params, show_param=True) 
     # mymodel = BERT_MLP(model_params, show_param=True)
     # mymodel = BERT_NER(model_params, show_param=True)
-    # mymodel = BERT_CRF(model_params, show_param=True)
+    mymodel = BERT_CRF(model_params, show_param=True)
 
     if args.use_cuda:
         train_dataset = dataset.train_dataset

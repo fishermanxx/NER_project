@@ -1,0 +1,107 @@
+2020-02-14 14:31:12,486 INFO train.py: ===== Start program
+2020-02-14 14:31:12,486 INFO train.py: ===== Initialize args
+2020-02-14 14:31:12,490 INFO train.py: ===== task mode: train
+2020-02-14 14:31:14,556 INFO train.py: ===== Load metadata
+2020-02-14 14:31:14,556 INFO train.py: ===== use_cuda: 1
+2020-02-14 14:31:14,556 INFO train.py: Time budget: 15000
+start to proprocessing data...
+PreProcess 0.021 
+PreProcess 0.042 
+PreProcess 0.062 
+PreProcess 0.083 
+PreProcess 0.104 
+PreProcess 0.125 
+PreProcess 0.146 
+PreProcess 0.167 
+PreProcess 0.187 
+PreProcess 0.208 
+PreProcess 0.229 
+PreProcess 0.250 
+PreProcess 0.271 
+PreProcess 0.292 
+PreProcess 0.312 
+PreProcess 0.333 
+PreProcess 0.354 
+PreProcess 0.375 
+PreProcess 0.396 
+PreProcess 0.416 
+PreProcess 0.437 
+PreProcess 0.458 
+PreProcess 0.479 
+PreProcess 0.500 
+PreProcess 0.521 
+PreProcess 0.541 
+PreProcess 0.562 
+PreProcess 0.583 
+PreProcess 0.604 
+PreProcess 0.625 
+PreProcess 0.646 
+PreProcess 0.666 
+PreProcess 0.687 
+PreProcess 0.708 
+PreProcess 0.729 
+PreProcess 0.750 
+PreProcess 0.770 
+PreProcess 0.791 
+PreProcess 0.812 
+PreProcess 0.833 
+PreProcess 0.854 
+PreProcess 0.875 
+PreProcess 0.895 
+PreProcess 0.916 
+PreProcess 0.937 
+PreProcess 0.958 
+PreProcess 0.979 
+PreProcess 1.000 
+character location dict done...
+pos location dict done...
+ent seq map dict done...
+preprocessing finished, save successfully~
+================================================================================
+----model_type: BERT_CRF
+----embedding_dim: 768
+----num_labels: 45
+----use_cuda: 1
+================================================================================
+2020-02-14 14:33:07,404 INFO train.py: ===== Start Train
+2020-02-14 14:33:07,405 INFO train.py: There is no such file in /mnt/disk0/home/xuxin/mywork/code/../result/model_test.p, Rebuild model
+use cuda=========================
+Process 0.000 
+Process 0.030 
+Process 0.060 
+Process 0.089 
+Process 0.119 
+Process 0.149 
+Process 0.179 
+Process 0.208 
+Process 0.238 
+Process 0.268 
+Process 0.298 
+Process 0.327 
+Process 0.357 
+Process 0.387 
+Process 0.417 
+Process 0.446 
+Process 0.476 
+Process 0.506 
+Process 0.536 
+Process 0.565 
+Process 0.595 
+Process 0.625 
+Process 0.655 
+Process 0.684 
+Process 0.714 
+Process 0.744 
+Process 0.774 
+Process 0.803 
+Process 0.833 
+Process 0.863 
+Process 0.893 
+Process 0.922 
+Process 0.952 
+Process 0.982 
+****BERT_finetune, learning_rate_upper: 0.005, learning_rate_bert: 5e-05
+model_test.p Training start!
+EPOCH: 1/45
+----[TRAIN] step: 1280/10084 | loss: 2.6089
+----[TRAIN] step: 2560/10084 | loss: 2.1758
