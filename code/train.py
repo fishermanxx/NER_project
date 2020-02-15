@@ -114,11 +114,11 @@ def _train(mymodel, args, data_loader, train_dataset=None, eval_dataset=None, RE
     ##TODO:
     if use_cuda:
         train_param = {
-            'EPOCH': 10,         #45
+            'EPOCH': 15,         #45
             'batch_size': 64,    #512
             'learning_rate_bert': 5e-5,
             'learning_rate_upper': 5e-3,
-            'bert_finetune': False,
+            'bert_finetune': True,
             'visualize_length': 20, #10
             'isshuffle': True,
             'result_dir': args.result_dir,
@@ -160,7 +160,6 @@ def _train(mymodel, args, data_loader, train_dataset=None, eval_dataset=None, RE
     score = np.loadtxt(score_save_path).T
     plot_img(loss, loss_img_path)
     plot_img(score, score_img_path)
-
 
 def _predict(mymodel, args, data_loader, data_set=None, RELOAD_MODEL=None, use_cuda=False):
     old_model_path = os.path.join(args.result_dir, RELOAD_MODEL)
@@ -239,11 +238,11 @@ def main():
         # 'num_labels': len(data_loader.ent_seq_map_dict)
     }
     ##TODO:
-    mymodel = BLSTM_CRF(model_params, show_param=True)   
+    # mymodel = BLSTM_CRF(model_params, show_param=True)   
     # mymodel = BERT_LSTM_CRF(model_params, show_param=True) 
     # mymodel = BERT_MLP(model_params, show_param=True)
     # mymodel = BERT_NER(model_params, show_param=True)
-    # mymodel = BERT_CRF(model_params, show_param=True)
+    mymodel = BERT_CRF(model_params, show_param=True)
 
     if args.use_cuda:
         train_dataset = dataset.train_dataset
