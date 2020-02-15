@@ -10,13 +10,10 @@ from torch import nn
 import torch.nn.init as I
 from torch.autograd import Variable
 
-from utils import my_lr_lambda
-from torch.optim.lr_scheduler import LambdaLR
+# from utils import my_lr_lambda
+# from torch.optim.lr_scheduler import LambdaLR
 
 import os
-# import math
-# import json
-# import numpy as np
 
 from model import MODEL_TEMP
 from model_crf import CRF
@@ -296,52 +293,41 @@ if __name__ == '__main__':
     
     mymodel = BERT_LSTM_CRF(model_config, show_param=True) 
 
-    data_set = AutoKGDataset('./d1/')
-    # train_dataset = data_set.train_dataset[:20]
-    # eval_dataset = data_set.dev_dataset[:10]
-    train_dataset = data_set.train_dataset
-    eval_dataset = data_set.dev_dataset
-    os.makedirs('result', exist_ok=True)
-    data_loader = KGDataLoader(data_set, rebuild=False, temp_dir='result/')
-    print(data_loader.embedding_info_dicts['entity_type_dict'])
+    ###===========================================================
+    ###模型参数测试
+    ###===========================================================
 
-    train_param = {
-        'EPOCH': 1,         #45
-        'batch_size': 4,    #512
-        'learning_rate_bert': 5e-5,
-        'learning_rate_upper': 5e-3,
-        'bert_finetune': False,
-        'visualize_length': 2, #10
-        'isshuffle': True,
-        'result_dir': './result/',
-        'model_name':'model_test.p'
-    }
-    mymodel.train_model(data_loader, hyper_param=train_param, train_dataset=train_dataset, eval_dataset=eval_dataset)
+    ##case1:
+    all_param = list(mymodel.named_parameters()) 
+    bert_param = [(n, p) for n, p in all_param if 'bert' in n]
+    other_param = [(n, p) for n, p in all_param if 'bert' not in n]
+    print(f'all_param: {len(all_param)}')
+    print(f'bert_param: {len(bert_param)}')
+    print(f'other_param: {len(other_param)}')
+    for n, p in other_param:
+        print(n, p.shape)
 
-    eval_param = {
-        'batch_size':100, 
-        'issave':False, 
-        'result_dir': './result/'
-    }
-    mymodel.eval_model(data_loader, data_set=eval_dataset, hyper_param=eval_param)
+    ##case2:
+    print('='*80)
+    all_param = list(mymodel.named_parameters())
+    crf_param = list(mymodel.crf.named_parameters())
+    lstm_param = list(mymodel.lstm.named_parameters())
+    fc_param = list(mymodel.hidden2tag.named_parameters())
+    bert_param = list(mymodel.bert.named_parameters())
+    # emb_param = list(mymodel.word_embeds.named_parameters())
 
-    # all_param = list(mymodel.named_parameters())
-    # crf_param = list(mymodel.crf.named_parameters())
-    # lstm_param = list(mymodel.lstm.named_parameters())
-    # fc_param = list(mymodel.hidden2tag.named_parameters())
-    # bert_param = list(mymodel.bert.named_parameters())
-    # # emb_param = list(mymodel.word_embeds.named_parameters())
-
-    # # print(f'emb_param: {len(emb_param)}')
-    # print(f'crf_param: {len(crf_param)}')
-    # print(f'lstm_param: {len(lstm_param)}')
-    # print(f'fc_param: {len(fc_param)}')
-    # print(f'bert_param: {len(bert_param)}')
-    # print('='*50)
-    # print(f'all_param: {len(all_param)}')
+    # print(f'emb_param: {len(emb_param)}')
+    print(f'crf_param: {len(crf_param)}')
+    print(f'lstm_param: {len(lstm_param)}')
+    print(f'fc_param: {len(fc_param)}')
+    print(f'bert_param: {len(bert_param)}')
+    print('='*50)
+    print(f'all_param: {len(all_param)}')
     # print(len(all_param))
-    # for i in range(len(all_param)):
-    #     print(all_param[i][0], all_param[i][1].shape)
+
+    other_param = crf_param + fc_param + lstm_param
+    for n, p in other_param:
+        print(n, p.shape)
 
     # no_decay = ['bias', 'reverse']
     # # choose_param = [p for n, p in lstm_param if not any(nd in n for nd in no_decay)]
@@ -354,3 +340,36 @@ if __name__ == '__main__':
     # print('='*50)
     # for name, param in choose_param:
     #     print(name, param.shape, id(param))
+
+
+    ###===========================================================
+    ###试训练
+    ###===========================================================
+    # data_set = AutoKGDataset('./d1/')
+    # # train_dataset = data_set.train_dataset[:20]
+    # # eval_dataset = data_set.dev_dataset[:10]
+    # train_dataset = data_set.train_dataset
+    # eval_dataset = data_set.dev_dataset
+    # os.makedirs('result', exist_ok=True)
+    # data_loader = KGDataLoader(data_set, rebuild=False, temp_dir='result/')
+    # print(data_loader.embedding_info_dicts['entity_type_dict'])
+
+    # train_param = {
+    #     'EPOCH': 1,         #45
+    #     'batch_size': 4,    #512
+    #     'learning_rate_bert': 5e-5,
+    #     'learning_rate_upper': 5e-3,
+    #     'bert_finetune': False,
+    #     'visualize_length': 2, #10
+    #     'isshuffle': True,
+    #     'result_dir': './result/',
+    #     'model_name':'model_test.p'
+    # }
+    # mymodel.train_model(data_loader, hyper_param=train_param, train_dataset=train_dataset, eval_dataset=eval_dataset)
+
+    # eval_param = {
+    #     'batch_size':100, 
+    #     'issave':False, 
+    #     'result_dir': './result/'
+    # }
+    # mymodel.eval_model(data_loader, data_set=eval_dataset, hyper_param=eval_param)

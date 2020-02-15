@@ -268,40 +268,74 @@ if __name__ == '__main__':
     
     mymodel = BERT_CRF(model_params, show_param=True).cuda()
 
-    data_set = AutoKGDataset('./d1/')
-    train_dataset = data_set.train_dataset[:20]
-    eval_dataset = data_set.dev_dataset[:10]
-    # # train_dataset = data_set.train_dataset
-    # # eval_dataset = data_set.dev_dataset
 
-    os.makedirs('result', exist_ok=True)
-    data_loader = KGDataLoader(data_set, rebuild=False, temp_dir='result/')
+    ###===========================================================
+    ###模型参数测试
+    ###===========================================================
+    ### case1
+    all_param = list(mymodel.named_parameters()) 
+    all_param2 = list(mymodel.parameters())
+    bert_param = [(n, p) for n, p in all_param if 'bert' in n]
+    other_param = [(n, p) for n, p in all_param if 'bert' not in n]
+    print(f'all_param: {len(all_param)}')
+    print(f'bert_param: {len(bert_param)}')
+    print(f'other_param: {len(other_param)}')
+    for n, p in other_param:
+        print(n, p.shape)
 
-    # print(data_loader.embedding_info_dicts['entity_type_dict'])
+    print('='*80)
+    crf_param = list(mymodel.crf.named_parameters())
+    crf_param2 = list(mymodel.crf.parameters())
+    fc_param = list(mymodel.hidden2tag.named_parameters())
+    fc_param2 = list(mymodel.hidden2tag.parameters())
+    bert_param = list(mymodel.bert.named_parameters())
+    bert_param2 = list(mymodel.bert.parameters())
+    print(f'all_param: {len(all_param)}, {len(all_param2)}')
+    print(f'crf_param: {len(crf_param)}, {len(crf_param2)}')
+    print(f'fc_param: {len(fc_param)}, {len(fc_param2)}')
+    print(f'bert_param: {len(bert_param)}, {len(bert_param2)}')
+
+    other_param2 = crf_param + fc_param
+    for n, p in other_param2:
+        print(n, p.shape)
+
+    ###===========================================================
+    ###试训练
+    ###===========================================================
+    # data_set = AutoKGDataset('./d1/')
+    # train_dataset = data_set.train_dataset[:20]
+    # eval_dataset = data_set.dev_dataset[:10]
+    # # # train_dataset = data_set.train_dataset
+    # # # eval_dataset = data_set.dev_dataset
+
+    # os.makedirs('result', exist_ok=True)
+    # data_loader = KGDataLoader(data_set, rebuild=False, temp_dir='result/')
+
+    # # print(data_loader.embedding_info_dicts['entity_type_dict'])
  
-    train_data_mat_dict = data_loader.transform(train_dataset)
-    data_generator = Batch_Generator(train_data_mat_dict, batch_size=4, data_type='ent', isshuffle=True)
+    # train_data_mat_dict = data_loader.transform(train_dataset)
+    # data_generator = Batch_Generator(train_data_mat_dict, batch_size=4, data_type='ent', isshuffle=True)
 
-    for epoch in range(2):
-        print('EPOCH: %d' % epoch)
-        for data_batch in data_generator:
-            x, pos, _, _, y_ent, lens, data_list = data_batch
-            print(x.shape, pos.shape, y_ent.shape)    ##(batch_size, max_length)
-            sentence = data_list[0]['input']
-            # print([(i, sentence[i]) for i in range(len(sentence))])
+    # for epoch in range(2):
+    #     print('EPOCH: %d' % epoch)
+    #     for data_batch in data_generator:
+    #         x, pos, _, _, y_ent, lens, data_list = data_batch
+    #         print(x.shape, pos.shape, y_ent.shape)    ##(batch_size, max_length)
+    #         sentence = data_list[0]['input']
+    #         # print([(i, sentence[i]) for i in range(len(sentence))])
 
-            ###======================for BERT-MLP-MODEL only==================================
-            mymodel._get_features(x, lens)
-            loss = mymodel._loss(x, y_ent, lens)
-            print(loss.shape)
-            mymodel._output(x, lens)
+    #         ###======================for BERT-MLP-MODEL only==================================
+    #         mymodel._get_features(x, lens)
+    #         loss = mymodel._loss(x, y_ent, lens)
+    #         print(loss.shape)
+    #         mymodel._output(x, lens)
 
-            # print(x[0])
-            # word_dict = data_loader.character_location_dict
-            # rev_word_dict = data_loader.inverse_character_location_dict
-            # print(list(word_dict.items())[1300:1350])
-            # print(list(rev_word_dict.items())[1300:1350])
-            # print(sentence)
-            # print(list(rev_word_dict[i] for i in x[0]))
-            break
-        break
+    #         # print(x[0])
+    #         # word_dict = data_loader.character_location_dict
+    #         # rev_word_dict = data_loader.inverse_character_location_dict
+    #         # print(list(word_dict.items())[1300:1350])
+    #         # print(list(rev_word_dict.items())[1300:1350])
+    #         # print(sentence)
+    #         # print(list(rev_word_dict[i] for i in x[0]))
+    #         break
+    #     break

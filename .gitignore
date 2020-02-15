@@ -3,4 +3,5 @@
 !*.sh
 !*.txt
 !code/
+!backup_code/
 !*.gitignore

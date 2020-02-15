@@ -114,11 +114,11 @@ def _train(mymodel, args, data_loader, train_dataset=None, eval_dataset=None, RE
     ##TODO:
     if use_cuda:
         train_param = {
-            'EPOCH': 5,         #45
+            'EPOCH': 10,         #45
             'batch_size': 64,    #512
             'learning_rate_bert': 5e-5,
             'learning_rate_upper': 5e-3,
-            'bert_finetune': True,
+            'bert_finetune': False,
             'visualize_length': 20, #10
             'isshuffle': True,
             'result_dir': args.result_dir,
@@ -130,7 +130,7 @@ def _train(mymodel, args, data_loader, train_dataset=None, eval_dataset=None, RE
             'EPOCH': CPU_EPOCH,         #45
             'batch_size': CPU_BATCHSIZE,    #512
             'learning_rate_bert': 5e-5,
-            'learning_rate_upper': 1e-3,
+            'learning_rate_upper': 5e-3,
             'bert_finetune': False,
             'visualize_length': CPU_VISUAL, #10
             'isshuffle': True,
@@ -239,8 +239,8 @@ def main():
         # 'num_labels': len(data_loader.ent_seq_map_dict)
     }
     ##TODO:
-    # mymodel = BLSTM_CRF(model_params, show_param=True)   
-    mymodel = BERT_LSTM_CRF(model_params, show_param=True) 
+    mymodel = BLSTM_CRF(model_params, show_param=True)   
+    # mymodel = BERT_LSTM_CRF(model_params, show_param=True) 
     # mymodel = BERT_MLP(model_params, show_param=True)
     # mymodel = BERT_NER(model_params, show_param=True)
     # mymodel = BERT_CRF(model_params, show_param=True)

@@ -10,8 +10,8 @@ from torch import nn
 import torch.nn.init as I
 from torch.autograd import Variable
 
-from utils import my_lr_lambda
-from torch.optim.lr_scheduler import LambdaLR
+# from utils import my_lr_lambda
+# from torch.optim.lr_scheduler import LambdaLR
 
 import os
 os.environ['CUDA_VISIBLE_DEVICES'] = '7'
@@ -230,34 +230,56 @@ class BERT_MLP(MODEL_TEMP):
 
 
 if __name__ == '__main__':
-    model_param = {
+    model_config = {
         'num_labels':45,
         'use_cuda':True   #True
     }
-    model = BERT_NER(params=model_param)
-    # model.load_model('./result/')
+    mymodel = BERT_MLP(config=model_config)
 
-    data_set = AutoKGDataset('./d1/')
-    # train_dataset = data_set.train_dataset[:20]
-    # eval_dataset = data_set.dev_dataset[:10]
-    train_dataset = data_set.train_dataset
-    eval_dataset = data_set.dev_dataset
+    ###===========================================================
+    ###模型参数测试
+    ###===========================================================
+    ##case1:
+    all_param = list(mymodel.named_parameters()) 
+    bert_param = [(n, p) for n, p in all_param if 'bert' in n]
+    other_param = [(n, p) for n, p in all_param if 'bert' not in n]
+    print(f'all_param: {len(all_param)}')
+    print(f'bert_param: {len(bert_param)}')
+    print(f'other_param: {len(other_param)}')
+    for n, p in other_param:
+        print(n, p.shape)
 
-    os.makedirs('result', exist_ok=True)
-    data_loader = KGDataLoader(data_set, rebuild=False, temp_dir='result/')
+    ##case2:
+    cls_param = list(mymodel.hidden2tag.named_parameters())
+    bert_param = list(mymodel.bert.named_parameters())
+    print(f'bert_param: {len(bert_param)}')
+    print(f'cls_param: {len(cls_param)}')
+    for n, p in cls_param:
+        print(n, p.shape)
 
-    print(data_loader.embedding_info_dicts['entity_type_dict'])
+    ###===========================================================
+    ###试训练
+    ###===========================================================
+    # data_set = AutoKGDataset('./d1/')
+    # # train_dataset = data_set.train_dataset[:20]
+    # # eval_dataset = data_set.dev_dataset[:10]
+    # train_dataset = data_set.train_dataset
+    # eval_dataset = data_set.dev_dataset
 
-    train_param = {
-        'learning_rate':5e-5,
-        'EPOCH':5,  #30
-        'batch_size':64,  #64
-        'visualize_length':20,  #10
-        'result_dir': './result/',
-        'isshuffle': True
-    }
-    model.train_model(data_loader, hyper_param=train_param, train_dataset=train_dataset, eval_dataset=eval_dataset)
+    # os.makedirs('result', exist_ok=True)
+    # data_loader = KGDataLoader(data_set, rebuild=False, temp_dir='result/')
 
+    # print(data_loader.embedding_info_dicts['entity_type_dict'])
+
+    # train_param = {
+    #     'learning_rate':5e-5,
+    #     'EPOCH':5,  #30
+    #     'batch_size':64,  #64
+    #     'visualize_length':20,  #10
+    #     'result_dir': './result/',
+    #     'isshuffle': True
+    # }
+    # model.train_model(data_loader, hyper_param=train_param, train_dataset=train_dataset, eval_dataset=eval_dataset)
 
     # predict_param = {
     #     'result_dir':'./result/',
