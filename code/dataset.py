@@ -186,4 +186,8 @@ if __name__ == '__main__':
     test = dataset.test_dataset
 
     names = inventory_data('./d1')
-    print(names)
+    # print(names)
+
+    from utils import show_metadata
+    meta_info = dataset.get_metadata()
+    show_metadata(meta_info)

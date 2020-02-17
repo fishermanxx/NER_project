@@ -254,7 +254,7 @@ class MODEL_TEMP(nn.Module):
 
         ## transform back to the dict form
         test_data_mat_dict['y_ent_matrix'] = pred_output
-        result = data_loader.transform_back(test_data_mat_dict, data_type='ent')
+        result = data_loader.transform_back(test_data_mat_dict, data_type=DATA_TYPE)
         
         ## save the result
         if ISSAVE and result_dir:
@@ -281,6 +281,10 @@ class MODEL_TEMP(nn.Module):
             @f1_s
         '''
         use_cuda = self.use_cuda if use_cuda is None else use_cuda
+        if use_cuda:
+            print('use cuda=========================')
+            self.cuda()
+
         def dict2str(d):
             ## 将entity 从字典形式转化为str形式方便比较
             res = d['entity']+':'+d['entity_type']+':'+str(d['entity_index']['begin'])+'-'+str(d['entity_index']['end'])
