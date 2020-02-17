@@ -14,9 +14,12 @@ class CRF(nn.Module):
         '''
         super(CRF, self).__init__()
         self.config = config
-        self.n_tags = self.config.get('n_tags', 3)
-        self.start_idx = self.config.get('start_idx', 0)
-        self.end_idx = self.config.get('end_idx', 1)
+        # self.n_tags = self.config.get('n_tags', 3)
+        # self.start_idx = self.config.get('start_idx', 0)
+        # self.end_idx = self.config.get('end_idx', 1)
+        self.n_tags = self.config['n_tags']
+        self.start_idx = self.config['start_idx']
+        self.end_idx = self.config['end_idx']
         self.use_cuda = self.config.get('use_cuda', 0)
 
         self.transitions = nn.Parameter(torch.randn(self.n_tags, self.n_tags))

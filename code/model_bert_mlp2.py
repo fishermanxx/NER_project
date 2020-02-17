@@ -25,7 +25,7 @@ class BERT_NER(MODEL_TEMP):
         '''
         super(BERT_NER, self).__init__()
         self.config = config
-        self.num_labels = self.config.get('n_tags', 45)
+        self.num_labels = self.config.get('n_ent_tags', 45)
         self.use_cuda = self.config.get('use_cuda', False)
         self.model = BertForTokenClassification.from_pretrained('bert-base-chinese', num_labels=self.num_labels)
         self.model_type = 'BERT_NER'
@@ -36,7 +36,7 @@ class BERT_NER(MODEL_TEMP):
     def show_model_param(self):
         log('='*80, 0)
         log(f'model_type: {self.model_type}', 1)
-        log(f'num_labels: {self.num_labels}', 1)
+        log(f'n_ent_tags: {self.num_labels}', 1)
         log(f'use_cuda: {self.use_cuda}', 1)
         log('='*80, 0)
 

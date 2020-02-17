@@ -22,7 +22,8 @@ def _here(*args):
 
 def _parse_args():
     default_starting_kit_dir = _here()
-    default_dataset_dir = os.path.join(default_starting_kit_dir, 'd1')
+    default_dataset_dir = os.path.join(default_starting_kit_dir, 'data/d1')
+    default_answer_dir = os.path.join(default_starting_kit_dir, 'data/s1')
     default_code_dir = os.path.join(default_starting_kit_dir, 'code')
     default_time_budget = 7200
     default_task = "baidu"
@@ -30,6 +31,10 @@ def _parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset_dir', type=str,
                         default=default_dataset_dir,
+                        help="Directory storing the dataset, contain .data and .solution file")
+
+    parser.add_argument('--answer_dir', type=str,
+                        default=default_answer_dir,
                         help="Directory storing the dataset, contain .data and .solution file")
 
     parser.add_argument('--code_dir', type=str,
@@ -54,13 +59,13 @@ def _parse_args():
     args = parser.parse_args()
     return args
 
-def run(dataset_dir, code_dir, task, time_budget=7200, mode='train', use_cuda=False):
+def run(dataset_dir, answer_dir, code_dir, task, time_budget=7200, mode='train', use_cuda=False):
     path_train = os.path.join(code_dir, 'train.py')
     path_select_param = os.path.join(code_dir, 'model_select.py')
 
     command_train = (
         'python3 -u '
-        f'{path_train} --dataset_dir={dataset_dir} '
+        f'{path_train} --dataset_dir={dataset_dir} --answer_dir={answer_dir} '
         f'--code_dir={code_dir} --time_budget={time_budget} --task={task} '
         f'--use_cuda={use_cuda} --mode={mode}'
     )
@@ -93,10 +98,11 @@ def main():
     logging.info("Begin running local test")
     logging.info(f"code_dir = {args.code_dir}")
     logging.info(f"dataset_dir = {args.dataset_dir}")
+    logging.info(f"answer_dir = {args.answer_dir}")
     logging.info(f"task = {args.task}")
     logging.info("#"*80)
 
-    run(args.dataset_dir, args.code_dir, args.task, args.time_budget, args.mode, args.use_cuda)
+    run(args.dataset_dir, args.answer_dir, args.code_dir, args.task, args.time_budget, args.mode, args.use_cuda)
 
 if __name__ == '__main__':
     main()

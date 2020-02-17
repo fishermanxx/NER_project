@@ -28,7 +28,8 @@ class REL_BLSTM_CRF(MODEL_TEMP):
         :param - dict
             param['embedding_dim']
             param['hidden_dim']
-            ***param['n_tags']
+            ***param['n_ent_tags']
+            param['n_rel_tags']
             param['n_rels']
             param['n_words']
             param['start_idx']  int, <start> tag index for entity tag seq
@@ -42,7 +43,8 @@ class REL_BLSTM_CRF(MODEL_TEMP):
         self.embedding_dim = self.config.get('embedding_dim', 128)
         self.hidden_dim = self.config.get('hidden_dim', 64)
         assert self.hidden_dim % 2 == 0, 'hidden_dim for BLSTM must be even'
-        self.n_tags = self.config.get('n_tags', 45)
+
+        self.n_tags = self.config.get('n_rel_tags', 8)
         self.n_rels = self.config.get('n_rels', 9)
         self.n_words = self.config.get('n_words', 10000)
 
@@ -50,7 +52,7 @@ class REL_BLSTM_CRF(MODEL_TEMP):
         self.lstm_layer_num = self.config.get('lstm_layer_num', 1)
 
         self.use_cuda = self.config.get('use_cuda', False)
-        self.model_type = 'BLSTM_CRF'
+        self.model_type = 'REL_BLSTM_CRF'
 
         self.build_model()
         self.reset_parameters()
@@ -83,7 +85,14 @@ class REL_BLSTM_CRF(MODEL_TEMP):
             bidirectional=True
         )
         self.hidden2tag = nn.Linear(self.hidden_dim, self.n_tags)
-        self.crf = CRF(self.config)
+        
+        crf_config = {
+            'n_tags': self.n_tags, 
+            'start_idx': self.config['start_rel_idx'],
+            'end_idx': self.config['end_rel_idx'],
+            'use_cuda': self.use_cuda    
+        }
+        self.crf = CRF(crf_config)
         self.relu_layer = nn.ReLU()
 
     def reset_parameters(self):        
@@ -180,7 +189,7 @@ class REL_BLSTM_CRF(MODEL_TEMP):
         scores, paths = self.crf.viterbi_decode(logits, lens, use_cuda)
         return paths
 
-    def train_model(self, data_loader: KGDataLoader, train_dataset=None, eval_dataset=None, hyper_param={}, use_cuda=None):
+    def train_model(self, data_loader: KGDataLoader, train_dataset=None, eval_dataset=None, hyper_param={}, use_cuda=None, rebuild=False):
         '''
         :param
             @data_loader: (KGDataLoader),
@@ -216,16 +225,18 @@ class REL_BLSTM_CRF(MODEL_TEMP):
         DATA_TYPE = 'rel'
         
         train_dataset = data_loader.dataset.train_dataset if train_dataset is None else train_dataset
-        # train_data_mat_dict = data_loader.transform(train_dataset, data_type=DATA_TYPE)
+        if rebuild:
+            train_data_mat_dict = data_loader.transform(train_dataset, data_type=DATA_TYPE)
         ## 保存预处理的文本，这样调参的时候可以直接读取，节约时间   *WARNING*
-        old_train_dict_path = os.path.join(result_dir, 'train_data_mat_dict.pkl')
-        if os.path.exists(old_train_dict_path):
-            train_data_mat_dict = data_loader.load_preprocessed_data(old_train_dict_path)
-            log('Reload preprocessed data successfully~')
         else:
-            # train_data_mat_dict = data_loader.transform(train_dataset, data_type=DATA_TYPE)
-            train_data_mat_dict = data_loader.transform(train_dataset, istest=False, data_type=DATA_TYPE, ratio=0)
-            data_loader.save_preprocessed_data(old_train_dict_path, train_data_mat_dict)
+            old_train_dict_path = os.path.join(result_dir, 'train_data_mat_dict.pkl')
+            if os.path.exists(old_train_dict_path):
+                train_data_mat_dict = data_loader.load_preprocessed_data(old_train_dict_path)
+                log('Reload preprocessed data successfully~')
+            else:
+                # train_data_mat_dict = data_loader.transform(train_dataset, data_type=DATA_TYPE)
+                train_data_mat_dict = data_loader.transform(train_dataset, istest=False, data_type=DATA_TYPE, ratio=0)
+                data_loader.save_preprocessed_data(old_train_dict_path, train_data_mat_dict)
         ## 保存预处理的文本，这样调参的时候可以直接读取，节约时间   *WARNING*
         data_generator = Batch_Generator(train_data_mat_dict, batch_size=BATCH_SIZE, data_type=DATA_TYPE, isshuffle=is_shuffle)
 
@@ -256,7 +267,7 @@ class REL_BLSTM_CRF(MODEL_TEMP):
         log(f'{model_name} Training start!', 0)
         loss_record = []
         score_record = []
-        max_score = 0
+        max_score = -1
 
         evel_param = {'batch_size':100, 'issave':False, 'result_dir': result_dir}
         for epoch in range(EPOCH):
@@ -283,14 +294,14 @@ class REL_BLSTM_CRF(MODEL_TEMP):
                     log(f'[TRAIN] step: {(cnt+1)*BATCH_SIZE}/{all_cnt} | loss: {loss_cur:.4f}', 1)
                     loss = 0.0
 
-                    self.eval()
-                    print(data_list[0]['input'])
-                    pre_paths = self._output(x, reltype, lens)
-                    print('predict-path')
-                    print(pre_paths[0])
-                    print('target-path')
-                    print(y_rel[0])
-                    self.train()        
+                    # self.eval()
+                    # print(data_list[0]['input'])
+                    # pre_paths = self._output(x, reltype, lens)
+                    # print('predict-path')
+                    # print(pre_paths[0])
+                    # print('target-path')
+                    # print(y_rel[0])
+                    # self.train()        
 
             temp_score = self.eval_model(data_loader, data_set=eval_dataset, hyper_param=evel_param, use_cuda=use_cuda)
             score_record.append(temp_score)
@@ -305,7 +316,7 @@ class REL_BLSTM_CRF(MODEL_TEMP):
         return loss_record, score_record
 
     @torch.no_grad()
-    def predict(self, data_loader, data_set=None, hyper_param={}, use_cuda=None):
+    def predict(self, data_loader, data_set=None, hyper_param={}, use_cuda=None, rebuild=False):
         '''
         预测出 test_data_mat_dict['y_ent_matrix']中的内容，重新填写进该matrix, 未预测之前都是0
         :param
@@ -335,16 +346,17 @@ class REL_BLSTM_CRF(MODEL_TEMP):
         DATA_TYPE = 'rel'
 
         test_dataset = data_loader.dataset.test_dataset if data_set is None else data_set
-        # test_data_mat_dict = data_loader.transform(test_dataset, istest=True, data_type=DATA_TYPE)
-
+        if rebuild:
+            test_data_mat_dict = data_loader.transform(test_dataset, istest=True, data_type=DATA_TYPE)
         ## 保存预处理的文本，这样调参的时候可以直接读取，节约时间   *WARNING*
-        old_test_dict_path = os.path.join(result_dir, 'test_data_mat_dict.pkl')
-        if os.path.exists(old_test_dict_path):
-            test_data_mat_dict = data_loader.load_preprocessed_data(old_test_dict_path)
-            log('Reload preprocessed data successfully~')
         else:
-            test_data_mat_dict = data_loader.transform(test_dataset, istest=True, data_type=DATA_TYPE, ratio=0)
-            data_loader.save_preprocessed_data(old_test_dict_path, test_data_mat_dict)
+            old_test_dict_path = os.path.join(result_dir, 'test_data_mat_dict.pkl')
+            if os.path.exists(old_test_dict_path):
+                test_data_mat_dict = data_loader.load_preprocessed_data(old_test_dict_path)
+                log('Reload preprocessed data successfully~')
+            else:
+                test_data_mat_dict = data_loader.transform(test_dataset, istest=True, data_type=DATA_TYPE, ratio=0)
+                data_loader.save_preprocessed_data(old_test_dict_path, test_data_mat_dict)
         ## 保存预处理的文本，这样调参的时候可以直接读取，节约时间   *WARNING*
 
         print('test_dataset_length:', len(test_dataset))
@@ -389,7 +401,7 @@ class REL_BLSTM_CRF(MODEL_TEMP):
         return result
 
     @torch.no_grad()
-    def eval_model(self, data_loader, data_set=None, hyper_param={}, use_cuda=None):
+    def eval_model(self, data_loader, data_set=None, hyper_param={}, use_cuda=None, rebuild=False):
         '''
         :param
             @data_loader: (KGDataLoader),
@@ -423,7 +435,7 @@ class REL_BLSTM_CRF(MODEL_TEMP):
 
         eva_data_set = data_loader.dataset.dev_dataset if data_set is None else data_set
 
-        pred_result = self.predict(data_loader, eva_data_set, hyper_param, use_cuda) ###list(dict), 预测结果 len=n_sentence
+        pred_result = self.predict(data_loader, eva_data_set, hyper_param, use_cuda, rebuild=rebuild) ###list(dict), 预测结果 len=n_sentence
         target = eva_data_set  ###list(dict)  AutoKGDataset, 真实结果
 
         pred_cnt = 0
@@ -496,6 +508,9 @@ if __name__ == '__main__':
     print(data_loader.embedding_info_dicts['label_location_dict'])
     show_metadata(data_loader.metadata_)
 
+    print('start_tags:', data_loader.rel_seq_map_dict[data_loader.START_TAG])
+    print('end_tags:', data_loader.rel_seq_map_dict[data_loader.END_TAG])
+
     train_param = {
         'EPOCH': 1,         #45
         'batch_size': 4,    #512
@@ -509,14 +524,14 @@ if __name__ == '__main__':
     }
     mymodel.train_model(data_loader, hyper_param=train_param, train_dataset=train_dataset, eval_dataset=eval_dataset)
 
-    eval_param = {
-        'batch_size':100, 
-        'issave':True, 
-        'result_dir': './result/'
-    }
-    # res = mymodel.predict(data_loader, data_set=eval_dataset, hyper_param=eval_param)
-    # print('predict data length', len(res))
-    mymodel.eval_model(data_loader, data_set=eval_dataset, hyper_param=eval_param)
+    # eval_param = {
+    #     'batch_size':100, 
+    #     'issave':True, 
+    #     'result_dir': './result/'
+    # }
+    # # res = mymodel.predict(data_loader, data_set=eval_dataset, hyper_param=eval_param)
+    # # print('predict data length', len(res))
+    # mymodel.eval_model(data_loader, data_set=eval_dataset, hyper_param=eval_param)
 
     ###===========================================================
     ###试训练 -- detail_part

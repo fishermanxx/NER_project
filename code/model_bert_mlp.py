@@ -25,10 +25,13 @@ class BERT_MLP(MODEL_TEMP):
         :param - dict
             param['embedding_dim']
             param['hidden_dim']
-            param['n_tags']
+            param['n_ent_tags']
+            param['n_rel_tags']
             param['n_words']
-            param['start_idx']  int, <start> tag index for entity tag seq
-            param['end_idx']   int, <end> tag index for entity tag seq
+            param['start_ent_idx']  int, <start> tag index for entity tag seq
+            param['end_ent_idx']   int, <end> tag index for entity tag seq
+            param['start_rel_idx']
+            param['end_rel_idx']
             param['use_cuda']
             param['dropout_prob']
             param['lstm_layer_num']
@@ -36,7 +39,7 @@ class BERT_MLP(MODEL_TEMP):
         super(BERT_MLP, self).__init__()
         self.config = config
         self.embedding_dim = self.config.get('embedding_dim', 768)
-        self.n_tags = self.config.get('n_tags', 45)
+        self.n_tags = self.config.get('n_ent_tags', 45)
         self.use_cuda = self.config.get('use_cuda', False)
         self.model_type = 'BERT_MLP'
 
@@ -49,7 +52,7 @@ class BERT_MLP(MODEL_TEMP):
         log('='*80, 0)
         log(f'model_type: {self.model_type}', 1)
         log(f'embedding_dim: {self.embedding_dim}', 1)
-        log(f'num_labels: {self.n_tags}', 1)
+        log(f'n_ent_tags: {self.n_tags}', 1)
         log(f'use_cuda: {self.use_cuda}', 1) 
         log('='*80, 0)      
 

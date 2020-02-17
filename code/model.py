@@ -62,7 +62,7 @@ class MODEL_TEMP(nn.Module):
         else:
             pass
 
-    def train_model(self, data_loader: KGDataLoader, train_dataset=None, eval_dataset=None, hyper_param={}, use_cuda=None):
+    def train_model(self, data_loader: KGDataLoader, train_dataset=None, eval_dataset=None, hyper_param={}, use_cuda=None, rebuild=False):
         '''
         :param
             @data_loader: (KGDataLoader),
@@ -98,15 +98,17 @@ class MODEL_TEMP(nn.Module):
         DATA_TYPE = 'ent'
         
         train_dataset = data_loader.dataset.train_dataset if train_dataset is None else train_dataset
-        # train_data_mat_dict = data_loader.transform(train_dataset, data_type=DATA_TYPE)
-        ## 保存预处理的文本，这样调参的时候可以直接读取，节约时间   *WARNING*
-        old_train_dict_path = os.path.join(result_dir, 'train_data_mat_dict.pkl')
-        if os.path.exists(old_train_dict_path):
-            train_data_mat_dict = data_loader.load_preprocessed_data(old_train_dict_path)
-            log('Reload preprocessed data successfully~')
-        else:
+        if rebuild:
             train_data_mat_dict = data_loader.transform(train_dataset, data_type=DATA_TYPE)
-            data_loader.save_preprocessed_data(old_train_dict_path, train_data_mat_dict)
+        ## 保存预处理的文本，这样调参的时候可以直接读取，节约时间   *WARNING*
+        else:
+            old_train_dict_path = os.path.join(result_dir, 'train_data_mat_dict.pkl')
+            if os.path.exists(old_train_dict_path):
+                train_data_mat_dict = data_loader.load_preprocessed_data(old_train_dict_path)
+                log('Reload preprocessed data successfully~')
+            else:
+                train_data_mat_dict = data_loader.transform(train_dataset, data_type=DATA_TYPE)
+                data_loader.save_preprocessed_data(old_train_dict_path, train_data_mat_dict)
         ## 保存预处理的文本，这样调参的时候可以直接读取，节约时间   *WARNING*
         data_generator = Batch_Generator(train_data_mat_dict, batch_size=BATCH_SIZE, data_type=DATA_TYPE, isshuffle=is_shuffle)
 
@@ -183,7 +185,7 @@ class MODEL_TEMP(nn.Module):
         return loss_record, score_record
 
     @torch.no_grad()
-    def predict(self, data_loader, data_set=None, hyper_param={}, use_cuda=None):
+    def predict(self, data_loader, data_set=None, hyper_param={}, use_cuda=None, rebuild=False):
         '''
         预测出 test_data_mat_dict['y_ent_matrix']中的内容，重新填写进该matrix, 未预测之前都是0
         :param
@@ -215,16 +217,17 @@ class MODEL_TEMP(nn.Module):
 
         
         test_dataset = data_loader.dataset.test_dataset if data_set is None else data_set
-        # test_data_mat_dict = data_loader.transform(test_dataset, istest=True, data_type=DATA_TYPE)
-
-        ## 保存预处理的文本，这样调参的时候可以直接读取，节约时间   *WARNING*
-        old_test_dict_path = os.path.join(result_dir, 'test_data_mat_dict.pkl')
-        if os.path.exists(old_test_dict_path):
-            test_data_mat_dict = data_loader.load_preprocessed_data(old_test_dict_path)
-            log('Reload preprocessed data successfully~')
-        else:
+        if rebuild:
             test_data_mat_dict = data_loader.transform(test_dataset, istest=True, data_type=DATA_TYPE)
-            data_loader.save_preprocessed_data(old_test_dict_path, test_data_mat_dict)
+        ## 保存预处理的文本，这样调参的时候可以直接读取，节约时间   *WARNING*
+        else:
+            old_test_dict_path = os.path.join(result_dir, 'test_data_mat_dict.pkl')
+            if os.path.exists(old_test_dict_path):
+                test_data_mat_dict = data_loader.load_preprocessed_data(old_test_dict_path)
+                log('Reload preprocessed data successfully~')
+            else:
+                test_data_mat_dict = data_loader.transform(test_dataset, istest=True, data_type=DATA_TYPE)
+                data_loader.save_preprocessed_data(old_test_dict_path, test_data_mat_dict)
         ## 保存预处理的文本，这样调参的时候可以直接读取，节约时间   *WARNING*
 
         data_generator = Batch_Generator(test_data_mat_dict, batch_size=BATCH_SIZE, data_type=DATA_TYPE, isshuffle=False)
@@ -267,7 +270,7 @@ class MODEL_TEMP(nn.Module):
         return result
 
     @torch.no_grad()
-    def eval_model(self, data_loader, data_set=None, hyper_param={}, use_cuda=None):
+    def eval_model(self, data_loader, data_set=None, hyper_param={}, use_cuda=None, rebuild=False):
         '''
         :param
             @data_loader: (KGDataLoader),
@@ -299,7 +302,7 @@ class MODEL_TEMP(nn.Module):
 
         eva_data_set = data_loader.dataset.dev_dataset if data_set is None else data_set
 
-        pred_result = self.predict(data_loader, eva_data_set, hyper_param, use_cuda) ###list(dict), 预测结果
+        pred_result = self.predict(data_loader, eva_data_set, hyper_param, use_cuda, rebuild) ###list(dict), 预测结果
         target = eva_data_set  ###list(dict)  AutoKGDataset, 真实结果
 
         pred_cnt = 0

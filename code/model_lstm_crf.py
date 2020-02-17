@@ -44,7 +44,7 @@ class BLSTM_CRF(MODEL_TEMP):
         self.embedding_dim = self.config.get('embedding_dim', 128)
         self.hidden_dim = self.config.get('hidden_dim', 64)
         assert self.hidden_dim % 2 == 0, 'hidden_dim for BLSTM must be even'
-        self.n_tags = self.config.get('n_tags', 45)
+        self.n_tags = self.config.get('n_ent_tags', 45)
         self.n_words = self.config.get('n_words', 10000)
 
         self.dropout_prob = self.config.get('dropout_prob', 0)
@@ -61,11 +61,14 @@ class BLSTM_CRF(MODEL_TEMP):
     def show_model_param(self):
         log('='*80, 0)
         log(f'model_type: {self.model_type}', 1)
+        log(f'use_cuda: {self.use_cuda}', 1)
         log(f'embedding_dim: {self.embedding_dim}', 1)
         log(f'hidden_dim: {self.hidden_dim}', 1)
-        log(f'use_cuda: {self.use_cuda}', 1)
         log(f'lstm_layer_num: {self.lstm_layer_num}', 1)
         log(f'dropout_prob: {self.dropout_prob}', 1)  
+        log(f'n_ent_tags: {self.n_tags}', 1)
+        log(f"crf_start_idx: {self.config['start_ent_idx']}", 1)
+        log(f"crf_end_idx: {self.config['end_ent_idx']}", 1)
         log('='*80, 0)      
 
     def build_model(self):
@@ -75,7 +78,15 @@ class BLSTM_CRF(MODEL_TEMP):
         self.word_embeds = nn.Embedding(self.n_words, self.embedding_dim)
         self.lstm = nn.LSTM(self.embedding_dim, self.hidden_dim//2, batch_first=True, num_layers=self.lstm_layer_num, dropout=self.dropout_prob, bidirectional=True)
         self.hidden2tag = nn.Linear(self.hidden_dim, self.n_tags)
-        self.crf = CRF(self.config)
+
+        crf_config = {
+            'n_tags': self.config['n_ent_tags'],
+            'start_idx': self.config['start_ent_idx'],
+            'end_idx': self.config['end_ent_idx'],
+            'use_cuda': self.use_cuda    
+        }
+        self.crf = CRF(crf_config)
+
 
     def reset_parameters(self):        
         I.xavier_normal_(self.word_embeds.weight.data)

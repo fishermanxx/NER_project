@@ -8,6 +8,8 @@ from model_bert_mlp import BERT_MLP
 from model_bert_mlp2 import BERT_NER
 from model_bert_crf import BERT_CRF
 
+from rel_model_lstm_crf import REL_BLSTM_CRF
+
 from common import get_logger, Timer
 
 import os
@@ -42,7 +44,8 @@ def _parse_args():
         @args.task
     '''
     root_dir = _here(os.pardir)  ##总目录
-    default_dataset_dir = os.path.join(root_dir, 'd1')
+    default_dataset_dir = os.path.join(root_dir, 'data/d1')
+    default_answer_dir = os.path.join(root_dir, 'data/s1')
     default_code_dir = os.path.join(root_dir, 'code')
     default_result_dir = os.path.join(root_dir, 'result')
 
@@ -52,6 +55,10 @@ def _parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset_dir', type=str,
                         default=default_dataset_dir,
+                        help="Directory storing the dataset, contain .data and .solution file")
+
+    parser.add_argument('--answer_dir', type=str,
+                        default=default_answer_dir,
                         help="Directory storing the dataset, contain .data and .solution file")
 
     parser.add_argument('--code_dir', type=str,
@@ -114,7 +121,7 @@ def _train(mymodel, args, data_loader, train_dataset=None, eval_dataset=None, RE
     ##TODO:
     if use_cuda:
         train_param = {
-            'EPOCH': 15,         #45
+            'EPOCH': 30,         #45
             'batch_size': 64,    #512
             'learning_rate_bert': 5e-5,
             'learning_rate_upper': 5e-3,
@@ -179,7 +186,7 @@ def _predict(mymodel, args, data_loader, data_set=None, RELOAD_MODEL=None, use_c
     timer = Timer()
     timer.set(args.time_budget)
     with timer.time_limit('predict'):
-        mymodel.predict(data_loader, data_set=data_set, hyper_param=hyper_param)   
+        mymodel.predict(data_loader, data_set=data_set, hyper_param=hyper_param, rebuild=True)   
 
 def _eval(mymodel: BLSTM_CRF, args, data_loader, data_set=None, RELOAD_MODEL=None, use_cuda=False):
     old_model_path = os.path.join(args.result_dir, RELOAD_MODEL)
@@ -200,7 +207,7 @@ def _eval(mymodel: BLSTM_CRF, args, data_loader, data_set=None, RELOAD_MODEL=Non
     timer = Timer()
     timer.set(args.time_budget)
     with timer.time_limit('eval'):
-        mymodel.eval_model(data_loader, data_set, hyper_param)
+        mymodel.eval_model(data_loader, data_set, hyper_param, rebuild=True)
 
 def main():
     LOGGER.info("===== Start program")
@@ -228,21 +235,27 @@ def main():
     model_params = {
         'embedding_dim' : 768,
         'hidden_dim' : 64,
-        'n_tags' : len(data_loader.ent_seq_map_dict),
+        'n_ent_tags' : len(data_loader.ent_seq_map_dict),  
+        'n_rel_tags' : len(data_loader.rel_seq_map_dict),  
+        'n_rels' : len(data_loader.label_location_dict)+1,
         'n_words' : len(data_loader.character_location_dict),
-        'start_idx': data_loader.ent_seq_map_dict[data_loader.START_TAG],  ## <start> tag index for entity tag seq
-        'end_idx': data_loader.ent_seq_map_dict[data_loader.END_TAG],  ## <end> tag index for entity tag seq
+        'start_ent_idx': data_loader.ent_seq_map_dict[data_loader.START_TAG],  ## <start> tag index for entity tag seq
+        'end_ent_idx': data_loader.ent_seq_map_dict[data_loader.END_TAG],  ## <end> tag index for entity tag seq
+        'start_rel_idx': data_loader.rel_seq_map_dict[data_loader.START_TAG],  ## <start> tag index for relation tag seq
+        'end_rel_idx': data_loader.rel_seq_map_dict[data_loader.END_TAG],  ## <end> tag index for relation tag seq
         'use_cuda':args.use_cuda,
         'dropout_prob': 0,
         'lstm_layer_num': 1
         # 'num_labels': len(data_loader.ent_seq_map_dict)
     }
     ##TODO:
-    # mymodel = BLSTM_CRF(model_params, show_param=True)   
+    mymodel = BLSTM_CRF(model_params, show_param=True)   
     # mymodel = BERT_LSTM_CRF(model_params, show_param=True) 
     # mymodel = BERT_MLP(model_params, show_param=True)
     # mymodel = BERT_NER(model_params, show_param=True)
-    mymodel = BERT_CRF(model_params, show_param=True)
+    # mymodel = BERT_CRF(model_params, show_param=True)
+
+    # mymodel = REL_BLSTM_CRF(model_params, show_param=True)
 
     if args.use_cuda:
         train_dataset = dataset.train_dataset
@@ -253,6 +266,10 @@ def main():
         test_dataset = dataset.test_dataset
         eval_dataset = dataset.dev_dataset[:CPU_EVAL]      
 
+    test_dataset_final = dataset._read_dataset(
+        os.path.join(args.answer_dir, 'test.solution')
+    )
+
     if args.mode == 'train':
         LOGGER.info('===== Start Train')
         # _train(mymodel, args, data_loader, train_dataset=train_dataset, eval_dataset=eval_dataset, RELOAD_MODEL=None, use_cuda=args.use_cuda)
@@ -262,7 +279,7 @@ def main():
         LOGGER.info('===== Start Eval')
         # _eval(mymodel, args, data_loader, data_set=eval_dataset, RELOAD_MODEL='', use_cuda=args.use_cuda)
         # _eval(mymodel, args, data_loader, data_set=eval_dataset, RELOAD_MODEL='', use_cuda=args.use_cuda)
-        _eval(mymodel, args, data_loader, data_set=eval_dataset, RELOAD_MODEL='model_test.p', use_cuda=args.use_cuda)
+        _eval(mymodel, args, data_loader, data_set=test_dataset_final, RELOAD_MODEL='model_test.p', use_cuda=args.use_cuda)
 
     if args.mode == 'eval':
         LOGGER.info('===== Start Eval')

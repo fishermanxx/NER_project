@@ -70,7 +70,7 @@ def show_dict_info(dataloader):
 
 def load_bert_pretrained_dict():
     vocab_list = []
-    with open('./d1/vocab.txt', encoding='utf-8') as f:
+    with open('./data/vocab.txt', encoding='utf-8') as f:
         for l in f.readlines():
             vocab_list.append(l.strip())
 
