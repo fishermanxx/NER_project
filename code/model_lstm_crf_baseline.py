@@ -1,9 +1,4 @@
 # !-*- coding:utf-8 -*-
-# TODO: 
-# 1. 句子经过blstm时长度的处理
-# 2. ***dropout layer 的添加  
-# 3. ***linear layer 之后激活层的添加 , tanh(x), relu(x)等
-# 5. ***embedding layer 初始化使用glove embedding
 
 from dataset import AutoKGDataset
 from utils import KGDataLoader, Batch_Generator
@@ -21,11 +16,12 @@ import os
 os.environ['CUDA_VISIBLE_DEVICES'] = '7'
 
 from model import MODEL_TEMP
-from model_crf import CRF
+# from model_crf import CRF
+from torchcrf import CRF
 torch.manual_seed(1)
 
 
-class BLSTM_CRF(MODEL_TEMP):
+class BASELINE(MODEL_TEMP):
     def __init__(self, config={}, show_param=False):
         '''
         :param - dict
@@ -39,19 +35,22 @@ class BLSTM_CRF(MODEL_TEMP):
             param['dropout_prob']
             param['lstm_layer_num']
         '''
-        super(BLSTM_CRF, self).__init__()
+        super(BASELINE, self).__init__()
         self.config = config
-        self.embedding_dim = self.config.get('embedding_dim', 768)  #TODO: 64
-        self.hidden_dim = self.config.get('hidden_dim', 64)  #TODO: 128*2
+        # self.embedding_dim = self.config.get('embedding_dim', 64)
+        self.embedding_dim = 64  #TODO:
+        # self.hidden_dim = self.config.get('hidden_dim', 128*2)
+        self.hidden_dim = 128*2  #TODO:
         assert self.hidden_dim % 2 == 0, 'hidden_dim for BLSTM must be even'
-        self.n_tags = self.config.get('n_ent_tags', 45)
+        self.n_tags = self.config.get('n_ent_tags', 45) - 2
         self.n_words = self.config.get('n_words', 10000)
 
         self.dropout_prob = self.config.get('dropout_prob', 0)
-        self.lstm_layer_num = self.config.get('lstm_layer_num', 1)
+        # self.lstm_layer_num = self.config.get('lstm_layer_num', 4)
+        self.lstm_layer_num = 4  #TODO:
 
         self.use_cuda = self.config.get('use_cuda', False)
-        self.model_type = 'BLSTM_CRF'
+        self.model_type = 'BASELINE'
 
         self.build_model()
         self.reset_parameters()
@@ -76,16 +75,10 @@ class BLSTM_CRF(MODEL_TEMP):
         build the embedding layer, lstm layer and CRF layer
         '''
         self.word_embeds = nn.Embedding(self.n_words, self.embedding_dim)
+        # self.pos_embeds = nn.Embedding(self.)
         self.lstm = nn.LSTM(self.embedding_dim, self.hidden_dim//2, batch_first=True, num_layers=self.lstm_layer_num, dropout=self.dropout_prob, bidirectional=True)
         self.hidden2tag = nn.Linear(self.hidden_dim, self.n_tags)
-
-        crf_config = {
-            'n_tags': self.config['n_ent_tags'],
-            'start_idx': self.config['start_ent_idx'],
-            'end_idx': self.config['end_ent_idx'],
-            'use_cuda': self.use_cuda    
-        }
-        self.crf = CRF(crf_config)
+        self.crf = CRF(self.n_tags, batch_first=True)
 
 
     def reset_parameters(self):        
@@ -136,17 +129,25 @@ class BLSTM_CRF(MODEL_TEMP):
             @y_ent: (batch_size, T), np.array, index之后的entity seq, 字符级别,
             @lens: (batch_size), list, 具体每个句子的长度, 
         :return 
-            @loss: (batch_size), torch.tensor
+            @loss: (1), torch.tensor
         '''
         use_cuda = self.use_cuda if use_cuda is None else use_cuda
+        T = x.shape[1]
 
-        logits = self._get_lstm_features(x)
-        log_norm_score = self.crf.log_norm_score(logits, lens)
-        path_score = self.crf.path_score(logits, y_ent, lens)
+        logits = self._get_lstm_features(x)   ##(batch_size, T, n_tags)
+        tensor_y_ent = self._to_tensor(y_ent, use_cuda)
 
-        loss = log_norm_score - path_score
-        loss = (loss/self._to_tensor(lens, use_cuda)).mean()
-        return loss
+        lens = self._to_tensor(lens, use_cuda)
+        len_mask = self._generate_mask(lens, max_len=T)  ##(batch_size, T)
+
+        log_likelihood_ent = self.crf(emissions=logits, tags=tensor_y_ent, mask=len_mask, reduction='mean')
+
+        # log_norm_score = self.crf.log_norm_score(logits, lens)
+        # path_score = self.crf.path_score(logits, y_ent, lens)
+
+        # loss = log_norm_score - path_score
+        # loss = (loss/self._to_tensor(lens, use_cuda)).mean()
+        return - log_likelihood_ent
 
     def _output(self, x, lens, use_cuda=None):
         '''
@@ -159,8 +160,15 @@ class BLSTM_CRF(MODEL_TEMP):
             @scores: (batch_size), torch.tensor, 最佳句子路径上的得分
         '''
         use_cuda = self.use_cuda if use_cuda is None else use_cuda
+        T = x.shape[1]
         logits = self._get_lstm_features(x, use_cuda)
-        scores, paths = self.crf.viterbi_decode(logits, lens, use_cuda)
+
+        lens = self._to_tensor(lens, use_cuda)
+        len_mask = self._generate_mask(lens, max_len=T)  ##(batch_size, T)
+    
+        # paths = self.crf.decode(logits, len_mask)
+        paths = self.crf.decode(logits)
+        paths = self._to_tensor(paths, use_cuda)
         return paths
 
     # def train_model(self, data_loader: KGDataLoader, train_dataset=None, eval_dataset=None, hyper_param={}, use_cuda=None):

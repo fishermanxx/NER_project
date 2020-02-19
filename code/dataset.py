@@ -76,9 +76,12 @@ class AutoKGDataset:
             os.path.join(self.dataset_dir_, 'train.data')
         )
         self.train_dataset, self.dev_dataset = train_test_split(self.all_train_dataset, test_size=0.3, random_state=random_state)
+        self.dev_dataset = self.check_repeat_sentence(self.dev_dataset)   ##remove the repeat sentence
+
         self.test_dataset = self._read_dataset(
             os.path.join(self.dataset_dir_, 'test.data')
         )
+        self.test_dataset = self.check_repeat_sentence(self.test_dataset)  ##remove the repeat sentence
 
         self._generate_metadata()
 
@@ -150,7 +153,20 @@ class AutoKGDataset:
             for line in fout:
                 data.append(json.loads(line))
         # print(len(data))
+        # data = self.check_repeat_sentence(data)   #TODO: remove the repeat sentence in training dataset
         return data
+
+    @staticmethod
+    def check_repeat_sentence(dataset):
+        new_dataset = []
+        seen_sentence = set()
+        for item in dataset:
+            if item['input'] in seen_sentence:
+                print(f"remove repeat sentence: {item['input']}")
+                continue
+            seen_sentence.add(item['input'])
+            new_dataset.append(item)
+        return new_dataset
 
 
 def inventory_data(input_dir):

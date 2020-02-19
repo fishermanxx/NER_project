@@ -42,7 +42,7 @@ class BERT_LSTM_CRF(MODEL_TEMP):
         super(BERT_LSTM_CRF, self).__init__()
         self.config = config
         self.embedding_dim = self.config.get('embedding_dim', 768)
-        self.hidden_dim = self.config.get('hidden_dim', 64)
+        self.hidden_dim = self.config.get('hidden_dim', 64)  ##TODO: 128*2
         assert self.hidden_dim % 2 == 0, 'hidden_dim for BLSTM must be even'
         self.n_tags = self.config.get('n_ent_tags', 45)
         # self.n_words = self.config.get('n_words', 10000)

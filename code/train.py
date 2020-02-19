@@ -1,12 +1,14 @@
 from dataset import AutoKGDataset
 from utils import KGDataLoader, Batch_Generator
 from utils import show_metadata, show_dict_info
-# from ent_model import BLSTM_CRF
+
+
 from model_lstm_crf import BLSTM_CRF
 from model_bert_lstm_crf import BERT_LSTM_CRF
 from model_bert_mlp import BERT_MLP
 from model_bert_mlp2 import BERT_NER
 from model_bert_crf import BERT_CRF
+from model_lstm_crf_baseline import BASELINE
 
 from rel_model_lstm_crf import REL_BLSTM_CRF
 
@@ -121,10 +123,10 @@ def _train(mymodel, args, data_loader, train_dataset=None, eval_dataset=None, RE
     ##TODO:
     if use_cuda:
         train_param = {
-            'EPOCH': 30,         #45
-            'batch_size': 64,    #512
+            'EPOCH': 15,         #45  TODO:15
+            'batch_size': 64,    #512   TODO:64
             'learning_rate_bert': 5e-5,
-            'learning_rate_upper': 5e-3,
+            'learning_rate_upper': 5e-3,  #TODO:
             'bert_finetune': True,
             'visualize_length': 20, #10
             'isshuffle': True,
@@ -219,6 +221,7 @@ def main():
 
     ##获取数据集
     dataset = AutoKGDataset(args.dataset_dir)  
+
     # show_metadata(dataset.metadata_)
 
     LOGGER.info('===== Load metadata')
@@ -233,8 +236,8 @@ def main():
 
     ## Reload model
     model_params = {
-        'embedding_dim' : 768,
-        'hidden_dim' : 64,
+        # 'embedding_dim' : 768,
+        # 'hidden_dim' : 64,       
         'n_ent_tags' : len(data_loader.ent_seq_map_dict),  
         'n_rel_tags' : len(data_loader.rel_seq_map_dict),  
         'n_rels' : len(data_loader.label_location_dict)+1,
@@ -245,15 +248,16 @@ def main():
         'end_rel_idx': data_loader.rel_seq_map_dict[data_loader.END_TAG],  ## <end> tag index for relation tag seq
         'use_cuda':args.use_cuda,
         'dropout_prob': 0,
-        'lstm_layer_num': 1
+        'lstm_layer_num': 1  ##TODO:
         # 'num_labels': len(data_loader.ent_seq_map_dict)
     }
     ##TODO:
-    mymodel = BLSTM_CRF(model_params, show_param=True)   
+    # mymodel = BLSTM_CRF(model_params, show_param=True)   
     # mymodel = BERT_LSTM_CRF(model_params, show_param=True) 
     # mymodel = BERT_MLP(model_params, show_param=True)
     # mymodel = BERT_NER(model_params, show_param=True)
-    # mymodel = BERT_CRF(model_params, show_param=True)
+    mymodel = BERT_CRF(model_params, show_param=True)
+    # mymodel = BASELINE(model_params, show_param=True)
 
     # mymodel = REL_BLSTM_CRF(model_params, show_param=True)
 
@@ -269,6 +273,7 @@ def main():
     test_dataset_final = dataset._read_dataset(
         os.path.join(args.answer_dir, 'test.solution')
     )
+    test_dataset_final = dataset.check_repeat_sentence(test_dataset_final)  ## remove the repeat sentences
 
     if args.mode == 'train':
         LOGGER.info('===== Start Train')

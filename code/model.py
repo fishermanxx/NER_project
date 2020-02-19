@@ -231,8 +231,6 @@ class MODEL_TEMP(nn.Module):
         ## 保存预处理的文本，这样调参的时候可以直接读取，节约时间   *WARNING*
 
         data_generator = Batch_Generator(test_data_mat_dict, batch_size=BATCH_SIZE, data_type=DATA_TYPE, isshuffle=False)
-        
-
         self.eval()   #disable dropout layer and the bn layer
 
         total_output_ent = []
@@ -257,8 +255,15 @@ class MODEL_TEMP(nn.Module):
 
         ## transform back to the dict form
         test_data_mat_dict['y_ent_matrix'] = pred_output
+
+        # print('len_y_ent_matrix', len(test_data_mat_dict['y_ent_matrix']))
+        # print('len_sentence_length', len(test_data_mat_dict['sentence_length']))
+        # print('len_cha_matrix', len(test_data_mat_dict['cha_matrix']))
+        # print('len_pos_matrix', len(test_data_mat_dict['pos_matrix']))
+        # print('len_data_list', len(test_data_mat_dict['data_list']))
+
         result = data_loader.transform_back(test_data_mat_dict, data_type=DATA_TYPE)
-        
+
         ## save the result
         if ISSAVE and result_dir:
             save_file = os.path.join(result_dir, 'predict.json')
@@ -304,6 +309,9 @@ class MODEL_TEMP(nn.Module):
 
         pred_result = self.predict(data_loader, eva_data_set, hyper_param, use_cuda, rebuild) ###list(dict), 预测结果
         target = eva_data_set  ###list(dict)  AutoKGDataset, 真实结果
+
+        print('len: pred_result', len(pred_result))
+        print('len: eva_data_set', len(eva_data_set))
 
         pred_cnt = 0
         tar_cnt = 0

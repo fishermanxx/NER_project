@@ -5,3 +5,4 @@ torch
 torchvision
 jieba
 transformers
+pytorch-crf

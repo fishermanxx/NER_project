@@ -14,6 +14,7 @@ import torch.nn as nn
 
 from dataset import AutoKGDataset
 
+
 def my_lr_lambda(epoch):
     return 1/(1+0.05*epoch)
 
@@ -576,6 +577,7 @@ class KGDataLoader(BaseLoader):
         ans = []
         sentence_ore_sub_dict = defaultdict(list)
         sample_number = len(result['data_list'])
+        # print('sample_number:', sample_number)
 
         relation = None
         sub_list = None
@@ -584,6 +586,9 @@ class KGDataLoader(BaseLoader):
 
         for idx in range(sample_number):
             sentence = result['data_list'][idx]['input']
+            # if sentence in sentence_ore_sub_dict:
+            #     print(f'WARNING:repeat sentence_{idx}: {sentence}')
+
             if data_type == 'ent_rel' or data_type == 'rel':
                 ## 对关系抽取的处理
                 y_rel = result['y_rel_matrix'][idx]
@@ -597,6 +602,8 @@ class KGDataLoader(BaseLoader):
                 entity_set = self._obtain_entity(y_ent, sentence)
             sentence_ore_sub_dict[sentence].append([relation, sub_list, obj_list, entity_set])
 
+        # print('total sentence_ore_sub_dict length:', len(sentence_ore_sub_dict))
+
         for sentence in sentence_ore_sub_dict.keys():
             ans_d = {}
             ans_d["input"] = sentence
@@ -608,6 +615,7 @@ class KGDataLoader(BaseLoader):
                 if data_type == "ent_rel" or data_type == "rel":
                     for sub in sub_list:
                         for obj in obj_list:
+                            ### 将relation转化成str
                             relation_list.add(
                                 json.dumps({"relation": relation, "head": sub["entity"], "tail": obj["entity"]},
                                            ensure_ascii=False)
