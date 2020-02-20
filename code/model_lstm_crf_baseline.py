@@ -38,16 +38,16 @@ class BASELINE(MODEL_TEMP):
         super(BASELINE, self).__init__()
         self.config = config
         # self.embedding_dim = self.config.get('embedding_dim', 64)
-        self.embedding_dim = 64  #TODO:
+        self.embedding_dim = 768  #TODO: 64, 768
         # self.hidden_dim = self.config.get('hidden_dim', 128*2)
-        self.hidden_dim = 128*2  #TODO:
+        self.hidden_dim = 64  #TODO: 256, 64
         assert self.hidden_dim % 2 == 0, 'hidden_dim for BLSTM must be even'
         self.n_tags = self.config.get('n_ent_tags', 45) - 2
         self.n_words = self.config.get('n_words', 10000)
 
         self.dropout_prob = self.config.get('dropout_prob', 0)
-        # self.lstm_layer_num = self.config.get('lstm_layer_num', 4)
-        self.lstm_layer_num = 4  #TODO:
+        self.lstm_layer_num = self.config.get('lstm_layer_num', 1)
+        # self.lstm_layer_num = 1  #TODO:
 
         self.use_cuda = self.config.get('use_cuda', False)
         self.model_type = 'BASELINE'

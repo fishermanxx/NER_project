@@ -1,12 +1,12 @@
-2020-02-19 12:58:30,842 INFO train.py: ===== Start program
-2020-02-19 12:58:30,842 INFO train.py: ===== Initialize args
-2020-02-19 12:58:30,845 INFO train.py: ===== task mode: train
+2020-02-20 16:40:25,142 INFO train.py: ===== Start program
+2020-02-20 16:40:25,143 INFO train.py: ===== Initialize args
+2020-02-20 16:40:25,145 INFO train.py: ===== task mode: train
 remove repeat sentence: 姓名：埃丹·泰尔  英文名：Idan Tal  性别：男  国籍：以色列  出生城市：利物浦  出生日期：1975年2月12日  身高：175cm  体重：73  场上位置：中场  场上编号：23  所属团队：博尔顿  曾效力团队：埃弗顿 巴列卡诺
 remove repeat sentence: 洛伦佐·加拉西(Lorenzo Galassi) ，男，1991年5月31日出生，意大利足球运动员
 remove repeat sentence: 领导简介  沈广树，男，汉族，1950年1月生，江苏南京人，1968年11月参加工作，大专学历，高级工程师，中共党员，现任江苏省农业机械管理局党组成员、副局长
-2020-02-19 12:58:35,919 INFO train.py: ===== Load metadata
-2020-02-19 12:58:35,919 INFO train.py: ===== use_cuda: 1
-2020-02-19 12:58:35,919 INFO train.py: Time budget: 30000
+2020-02-20 16:40:32,034 INFO train.py: ===== Load metadata
+2020-02-20 16:40:32,034 INFO train.py: ===== use_cuda: 1
+2020-02-20 16:40:32,034 INFO train.py: Time budget: 30000
 start to proprocessing data...
 PreProcess 0.000 
 PreProcess 0.008 
@@ -143,16 +143,13 @@ pos location dict done...
 ent seq map dict done...
 preprocessing finished, save successfully~
 ================================================================================
-----model_type: BERT_CRF
-----use_cuda: 1
-----embedding_dim: 768
+----model_type: BERT_NER
 ----n_ent_tags: 66
-----crf_start_idx: 64
-----crf_end_idx: 65
+----use_cuda: 1
 ================================================================================
 remove repeat sentence: 领导简介  沈广树，男，汉族，1950年1月生，江苏南京人，1968年11月参加工作，大专学历，高级工程师，中共党员，现任江苏省农业机械管理局党组成员、副局长
-2020-02-19 13:03:36,285 INFO train.py: ===== Start Train
-2020-02-19 13:03:36,285 INFO train.py: There is no such file in /mnt/disk0/home/xuxin/mywork/code/../result/model_test.p, Rebuild model
+2020-02-20 16:46:23,278 INFO train.py: ===== Start Train
+2020-02-20 16:46:23,279 INFO train.py: There is no such file in /mnt/disk0/home/xuxin/mywork/code/../result/model_test.p, Rebuild model
 use cuda=========================
 Process 0.000 
 Process 0.011 
@@ -248,27 +245,27 @@ Process 0.992
 ****BERT_finetune, learning_rate_upper: 0.005, learning_rate_bert: 5e-05
 model_test.p Training start!
 EPOCH: 1/15
-----[TRAIN] step: 1280/27216 | loss: 3.6307
-----[TRAIN] step: 2560/27216 | loss: 3.2005
-----[TRAIN] step: 3840/27216 | loss: 2.9921
-----[TRAIN] step: 5120/27216 | loss: 2.7886
-----[TRAIN] step: 6400/27216 | loss: 2.5850
-----[TRAIN] step: 7680/27216 | loss: 2.4133
-----[TRAIN] step: 8960/27216 | loss: 2.2325
-----[TRAIN] step: 10240/27216 | loss: 2.0539
-----[TRAIN] step: 11520/27216 | loss: 1.8916
-----[TRAIN] step: 12800/27216 | loss: 1.7143
-----[TRAIN] step: 14080/27216 | loss: 1.5469
-----[TRAIN] step: 15360/27216 | loss: 1.4024
-----[TRAIN] step: 16640/27216 | loss: 1.2612
-----[TRAIN] step: 17920/27216 | loss: 1.1238
-----[TRAIN] step: 19200/27216 | loss: 0.9848
-----[TRAIN] step: 20480/27216 | loss: 0.8877
-----[TRAIN] step: 21760/27216 | loss: 0.7762
-----[TRAIN] step: 23040/27216 | loss: 0.6784
-----[TRAIN] step: 24320/27216 | loss: 0.5977
-----[TRAIN] step: 25600/27216 | loss: 0.5390
-----[TRAIN] step: 26880/27216 | loss: 0.4798
+----[TRAIN] step: 1280/27216 | loss: 0.9170
+----[TRAIN] step: 2560/27216 | loss: 0.2910
+----[TRAIN] step: 3840/27216 | loss: 0.2477
+----[TRAIN] step: 5120/27216 | loss: 0.2211
+----[TRAIN] step: 6400/27216 | loss: 0.2097
+----[TRAIN] step: 7680/27216 | loss: 0.1999
+----[TRAIN] step: 8960/27216 | loss: 0.1913
+----[TRAIN] step: 10240/27216 | loss: 0.1818
+----[TRAIN] step: 11520/27216 | loss: 0.1765
+----[TRAIN] step: 12800/27216 | loss: 0.1711
+----[TRAIN] step: 14080/27216 | loss: 0.1741
+----[TRAIN] step: 15360/27216 | loss: 0.1867
+----[TRAIN] step: 16640/27216 | loss: 0.1812
+----[TRAIN] step: 17920/27216 | loss: 0.1890
+----[TRAIN] step: 19200/27216 | loss: 0.1787
+----[TRAIN] step: 20480/27216 | loss: 0.1908
+----[TRAIN] step: 21760/27216 | loss: 0.1775
+----[TRAIN] step: 23040/27216 | loss: 0.1762
+----[TRAIN] step: 24320/27216 | loss: 0.1784
+----[TRAIN] step: 25600/27216 | loss: 0.1651
+----[TRAIN] step: 26880/27216 | loss: 0.1632
 use cuda=========================
 use cuda=========================
 Process 0.000 
@@ -325,43 +322,43 @@ Predict start!
 len: pred_result 11662
 len: eva_data_set 11662
 Eval start
-----[EVAL] step 1000/11662 | precision: 0.892 | recall: 0.331 | f1 score: 0.483
-----[EVAL] step 2000/11662 | precision: 0.886 | recall: 0.328 | f1 score: 0.479
-----[EVAL] step 3000/11662 | precision: 0.884 | recall: 0.33 | f1 score: 0.481
-----[EVAL] step 4000/11662 | precision: 0.885 | recall: 0.33 | f1 score: 0.481
-----[EVAL] step 5000/11662 | precision: 0.883 | recall: 0.328 | f1 score: 0.478
-----[EVAL] step 6000/11662 | precision: 0.884 | recall: 0.328 | f1 score: 0.478
-----[EVAL] step 7000/11662 | precision: 0.881 | recall: 0.327 | f1 score: 0.477
-----[EVAL] step 8000/11662 | precision: 0.885 | recall: 0.329 | f1 score: 0.48
-----[EVAL] step 9000/11662 | precision: 0.885 | recall: 0.329 | f1 score: 0.48
-----[EVAL] step 10000/11662 | precision: 0.886 | recall: 0.329 | f1 score: 0.48
-----[EVAL] step 11000/11662 | precision: 0.886 | recall: 0.329 | f1 score: 0.48
+----[EVAL] step 1000/11662 | precision: 0.877 | recall: 0.816 | f1 score: 0.845
+----[EVAL] step 2000/11662 | precision: 0.879 | recall: 0.808 | f1 score: 0.842
+----[EVAL] step 3000/11662 | precision: 0.878 | recall: 0.81 | f1 score: 0.843
+----[EVAL] step 4000/11662 | precision: 0.878 | recall: 0.81 | f1 score: 0.843
+----[EVAL] step 5000/11662 | precision: 0.876 | recall: 0.806 | f1 score: 0.84
+----[EVAL] step 6000/11662 | precision: 0.877 | recall: 0.805 | f1 score: 0.839
+----[EVAL] step 7000/11662 | precision: 0.874 | recall: 0.802 | f1 score: 0.836
+----[EVAL] step 8000/11662 | precision: 0.875 | recall: 0.802 | f1 score: 0.837
+----[EVAL] step 9000/11662 | precision: 0.874 | recall: 0.802 | f1 score: 0.836
+----[EVAL] step 10000/11662 | precision: 0.874 | recall: 0.802 | f1 score: 0.836
+----[EVAL] step 11000/11662 | precision: 0.873 | recall: 0.801 | f1 score: 0.835
 ====================================================================================================
-[FINAL] | precision: 0.887 | recall: 0.33 | f1 score: 0.481
+[FINAL] | precision: 0.874 | recall: 0.802 | f1 score: 0.836
 ====================================================================================================
-Checkpoint saved successfully, current best socre is 0.481
+Checkpoint saved successfully, current best socre is 0.836
 EPOCH: 2/15
-----[TRAIN] step: 1280/27216 | loss: 0.4277
-----[TRAIN] step: 2560/27216 | loss: 0.3891
-----[TRAIN] step: 3840/27216 | loss: 0.3737
-----[TRAIN] step: 5120/27216 | loss: 0.3521
-----[TRAIN] step: 6400/27216 | loss: 0.3380
-----[TRAIN] step: 7680/27216 | loss: 0.3102
-----[TRAIN] step: 8960/27216 | loss: 0.2967
-----[TRAIN] step: 10240/27216 | loss: 0.2955
-----[TRAIN] step: 11520/27216 | loss: 0.2698
-----[TRAIN] step: 12800/27216 | loss: 0.2463
-----[TRAIN] step: 14080/27216 | loss: 0.2257
-----[TRAIN] step: 15360/27216 | loss: 0.2079
-----[TRAIN] step: 16640/27216 | loss: 0.2039
-----[TRAIN] step: 17920/27216 | loss: 0.1918
-----[TRAIN] step: 19200/27216 | loss: 0.1935
-----[TRAIN] step: 20480/27216 | loss: 0.1806
-----[TRAIN] step: 21760/27216 | loss: 0.1690
-----[TRAIN] step: 23040/27216 | loss: 0.1642
-----[TRAIN] step: 24320/27216 | loss: 0.1561
-----[TRAIN] step: 25600/27216 | loss: 0.1481
-----[TRAIN] step: 26880/27216 | loss: 0.1389
+----[TRAIN] step: 1280/27216 | loss: 0.1462
+----[TRAIN] step: 2560/27216 | loss: 0.1420
+----[TRAIN] step: 3840/27216 | loss: 0.1531
+----[TRAIN] step: 5120/27216 | loss: 0.1600
+----[TRAIN] step: 6400/27216 | loss: 0.1425
+----[TRAIN] step: 7680/27216 | loss: 0.1585
+----[TRAIN] step: 8960/27216 | loss: 0.1504
+----[TRAIN] step: 10240/27216 | loss: 0.1477
+----[TRAIN] step: 11520/27216 | loss: 0.1423
+----[TRAIN] step: 12800/27216 | loss: 0.1492
+----[TRAIN] step: 14080/27216 | loss: 0.1457
+----[TRAIN] step: 15360/27216 | loss: 0.1576
+----[TRAIN] step: 16640/27216 | loss: 0.1626
+----[TRAIN] step: 17920/27216 | loss: 0.1478
+----[TRAIN] step: 19200/27216 | loss: 0.1415
+----[TRAIN] step: 20480/27216 | loss: 0.1539
+----[TRAIN] step: 21760/27216 | loss: 0.1437
+----[TRAIN] step: 23040/27216 | loss: 0.1611
+----[TRAIN] step: 24320/27216 | loss: 0.1481
+----[TRAIN] step: 25600/27216 | loss: 0.1402
+----[TRAIN] step: 26880/27216 | loss: 0.1494
 use cuda=========================
 use cuda=========================
 Reload preprocessed data successfully~
@@ -380,43 +377,42 @@ Predict start!
 len: pred_result 11662
 len: eva_data_set 11662
 Eval start
-----[EVAL] step 1000/11662 | precision: 0.848 | recall: 0.783 | f1 score: 0.814
-----[EVAL] step 2000/11662 | precision: 0.847 | recall: 0.775 | f1 score: 0.809
-----[EVAL] step 3000/11662 | precision: 0.843 | recall: 0.778 | f1 score: 0.809
-----[EVAL] step 4000/11662 | precision: 0.845 | recall: 0.779 | f1 score: 0.811
-----[EVAL] step 5000/11662 | precision: 0.84 | recall: 0.774 | f1 score: 0.806
-----[EVAL] step 6000/11662 | precision: 0.84 | recall: 0.773 | f1 score: 0.805
-----[EVAL] step 7000/11662 | precision: 0.838 | recall: 0.771 | f1 score: 0.803
-----[EVAL] step 8000/11662 | precision: 0.839 | recall: 0.772 | f1 score: 0.804
-----[EVAL] step 9000/11662 | precision: 0.837 | recall: 0.772 | f1 score: 0.803
-----[EVAL] step 10000/11662 | precision: 0.838 | recall: 0.771 | f1 score: 0.803
-----[EVAL] step 11000/11662 | precision: 0.837 | recall: 0.771 | f1 score: 0.803
+----[EVAL] step 1000/11662 | precision: 0.893 | recall: 0.798 | f1 score: 0.843
+----[EVAL] step 2000/11662 | precision: 0.893 | recall: 0.79 | f1 score: 0.838
+----[EVAL] step 3000/11662 | precision: 0.887 | recall: 0.795 | f1 score: 0.838
+----[EVAL] step 4000/11662 | precision: 0.887 | recall: 0.795 | f1 score: 0.838
+----[EVAL] step 5000/11662 | precision: 0.885 | recall: 0.793 | f1 score: 0.836
+----[EVAL] step 6000/11662 | precision: 0.886 | recall: 0.794 | f1 score: 0.837
+----[EVAL] step 7000/11662 | precision: 0.883 | recall: 0.791 | f1 score: 0.834
+----[EVAL] step 8000/11662 | precision: 0.885 | recall: 0.791 | f1 score: 0.835
+----[EVAL] step 9000/11662 | precision: 0.884 | recall: 0.791 | f1 score: 0.835
+----[EVAL] step 10000/11662 | precision: 0.885 | recall: 0.79 | f1 score: 0.835
+----[EVAL] step 11000/11662 | precision: 0.885 | recall: 0.79 | f1 score: 0.835
 ====================================================================================================
-[FINAL] | precision: 0.838 | recall: 0.772 | f1 score: 0.804
+[FINAL] | precision: 0.885 | recall: 0.791 | f1 score: 0.835
 ====================================================================================================
-Checkpoint saved successfully, current best socre is 0.804
 EPOCH: 3/15
-----[TRAIN] step: 1280/27216 | loss: 0.1374
-----[TRAIN] step: 2560/27216 | loss: 0.1323
-----[TRAIN] step: 3840/27216 | loss: 0.1300
-----[TRAIN] step: 5120/27216 | loss: 0.1272
-----[TRAIN] step: 6400/27216 | loss: 0.1266
-----[TRAIN] step: 7680/27216 | loss: 0.1225
-----[TRAIN] step: 8960/27216 | loss: 0.1211
-----[TRAIN] step: 10240/27216 | loss: 0.1183
-----[TRAIN] step: 11520/27216 | loss: 0.1221
-----[TRAIN] step: 12800/27216 | loss: 0.1156
-----[TRAIN] step: 14080/27216 | loss: 0.1169
-----[TRAIN] step: 15360/27216 | loss: 0.1129
-----[TRAIN] step: 16640/27216 | loss: 0.1103
-----[TRAIN] step: 17920/27216 | loss: 0.1054
-----[TRAIN] step: 19200/27216 | loss: 0.1102
-----[TRAIN] step: 20480/27216 | loss: 0.1061
-----[TRAIN] step: 21760/27216 | loss: 0.1042
-----[TRAIN] step: 23040/27216 | loss: 0.1086
-----[TRAIN] step: 24320/27216 | loss: 0.1093
-----[TRAIN] step: 25600/27216 | loss: 0.0972
-----[TRAIN] step: 26880/27216 | loss: 0.0938
+----[TRAIN] step: 1280/27216 | loss: 0.1383
+----[TRAIN] step: 2560/27216 | loss: 0.1334
+----[TRAIN] step: 3840/27216 | loss: 0.1262
+----[TRAIN] step: 5120/27216 | loss: 0.1369
+----[TRAIN] step: 6400/27216 | loss: 0.1255
+----[TRAIN] step: 7680/27216 | loss: 0.1244
+----[TRAIN] step: 8960/27216 | loss: 0.1270
+----[TRAIN] step: 10240/27216 | loss: 0.1263
+----[TRAIN] step: 11520/27216 | loss: 0.1262
+----[TRAIN] step: 12800/27216 | loss: 0.1247
+----[TRAIN] step: 14080/27216 | loss: 0.1402
+----[TRAIN] step: 15360/27216 | loss: 0.1327
+----[TRAIN] step: 16640/27216 | loss: 0.1286
+----[TRAIN] step: 17920/27216 | loss: 0.1406
+----[TRAIN] step: 19200/27216 | loss: 0.1389
+----[TRAIN] step: 20480/27216 | loss: 0.1333
+----[TRAIN] step: 21760/27216 | loss: 0.1340
+----[TRAIN] step: 23040/27216 | loss: 0.1270
+----[TRAIN] step: 24320/27216 | loss: 0.1241
+----[TRAIN] step: 25600/27216 | loss: 0.1321
+----[TRAIN] step: 26880/27216 | loss: 0.1286
 use cuda=========================
 use cuda=========================
 Reload preprocessed data successfully~
@@ -435,43 +431,43 @@ Predict start!
 len: pred_result 11662
 len: eva_data_set 11662
 Eval start
-----[EVAL] step 1000/11662 | precision: 0.86 | recall: 0.808 | f1 score: 0.833
-----[EVAL] step 2000/11662 | precision: 0.856 | recall: 0.802 | f1 score: 0.828
-----[EVAL] step 3000/11662 | precision: 0.854 | recall: 0.803 | f1 score: 0.828
-----[EVAL] step 4000/11662 | precision: 0.852 | recall: 0.803 | f1 score: 0.827
-----[EVAL] step 5000/11662 | precision: 0.849 | recall: 0.8 | f1 score: 0.824
-----[EVAL] step 6000/11662 | precision: 0.851 | recall: 0.799 | f1 score: 0.824
-----[EVAL] step 7000/11662 | precision: 0.849 | recall: 0.797 | f1 score: 0.822
-----[EVAL] step 8000/11662 | precision: 0.85 | recall: 0.798 | f1 score: 0.823
-----[EVAL] step 9000/11662 | precision: 0.85 | recall: 0.799 | f1 score: 0.824
-----[EVAL] step 10000/11662 | precision: 0.85 | recall: 0.797 | f1 score: 0.823
-----[EVAL] step 11000/11662 | precision: 0.849 | recall: 0.798 | f1 score: 0.823
+----[EVAL] step 1000/11662 | precision: 0.896 | recall: 0.812 | f1 score: 0.852
+----[EVAL] step 2000/11662 | precision: 0.897 | recall: 0.796 | f1 score: 0.843
+----[EVAL] step 3000/11662 | precision: 0.892 | recall: 0.799 | f1 score: 0.843
+----[EVAL] step 4000/11662 | precision: 0.894 | recall: 0.801 | f1 score: 0.845
+----[EVAL] step 5000/11662 | precision: 0.891 | recall: 0.797 | f1 score: 0.841
+----[EVAL] step 6000/11662 | precision: 0.892 | recall: 0.797 | f1 score: 0.842
+----[EVAL] step 7000/11662 | precision: 0.89 | recall: 0.795 | f1 score: 0.84
+----[EVAL] step 8000/11662 | precision: 0.891 | recall: 0.795 | f1 score: 0.84
+----[EVAL] step 9000/11662 | precision: 0.89 | recall: 0.794 | f1 score: 0.839
+----[EVAL] step 10000/11662 | precision: 0.89 | recall: 0.794 | f1 score: 0.839
+----[EVAL] step 11000/11662 | precision: 0.89 | recall: 0.794 | f1 score: 0.839
 ====================================================================================================
-[FINAL] | precision: 0.849 | recall: 0.798 | f1 score: 0.823
+[FINAL] | precision: 0.89 | recall: 0.794 | f1 score: 0.839
 ====================================================================================================
-Checkpoint saved successfully, current best socre is 0.823
+Checkpoint saved successfully, current best socre is 0.839
 EPOCH: 4/15
-----[TRAIN] step: 1280/27216 | loss: 0.0992
-----[TRAIN] step: 2560/27216 | loss: 0.0966
-----[TRAIN] step: 3840/27216 | loss: 0.0978
-----[TRAIN] step: 5120/27216 | loss: 0.0974
-----[TRAIN] step: 6400/27216 | loss: 0.0966
-----[TRAIN] step: 7680/27216 | loss: 0.0950
-----[TRAIN] step: 8960/27216 | loss: 0.0879
-----[TRAIN] step: 10240/27216 | loss: 0.0924
-----[TRAIN] step: 11520/27216 | loss: 0.0936
-----[TRAIN] step: 12800/27216 | loss: 0.0900
-----[TRAIN] step: 14080/27216 | loss: 0.0926
-----[TRAIN] step: 15360/27216 | loss: 0.0948
-----[TRAIN] step: 16640/27216 | loss: 0.0875
-----[TRAIN] step: 17920/27216 | loss: 0.0915
-----[TRAIN] step: 19200/27216 | loss: 0.0859
-----[TRAIN] step: 20480/27216 | loss: 0.0879
-----[TRAIN] step: 21760/27216 | loss: 0.0855
-----[TRAIN] step: 23040/27216 | loss: 0.0847
-----[TRAIN] step: 24320/27216 | loss: 0.0877
-----[TRAIN] step: 25600/27216 | loss: 0.0864
-----[TRAIN] step: 26880/27216 | loss: 0.0835
+----[TRAIN] step: 1280/27216 | loss: 0.1161
+----[TRAIN] step: 2560/27216 | loss: 0.1034
+----[TRAIN] step: 3840/27216 | loss: 0.1238
+----[TRAIN] step: 5120/27216 | loss: 0.1118
+----[TRAIN] step: 6400/27216 | loss: 0.1185
+----[TRAIN] step: 7680/27216 | loss: 0.1076
+----[TRAIN] step: 8960/27216 | loss: 0.1104
+----[TRAIN] step: 10240/27216 | loss: 0.1064
+----[TRAIN] step: 11520/27216 | loss: 0.1204
+----[TRAIN] step: 12800/27216 | loss: 0.1157
+----[TRAIN] step: 14080/27216 | loss: 0.1115
+----[TRAIN] step: 15360/27216 | loss: 0.1094
+----[TRAIN] step: 16640/27216 | loss: 0.1146
+----[TRAIN] step: 17920/27216 | loss: 0.1173
+----[TRAIN] step: 19200/27216 | loss: 0.1225
+----[TRAIN] step: 20480/27216 | loss: 0.1191
+----[TRAIN] step: 21760/27216 | loss: 0.1176
+----[TRAIN] step: 23040/27216 | loss: 0.1163
+----[TRAIN] step: 24320/27216 | loss: 0.1179
+----[TRAIN] step: 25600/27216 | loss: 0.1130
+----[TRAIN] step: 26880/27216 | loss: 0.1141
 use cuda=========================
 use cuda=========================
 Reload preprocessed data successfully~
@@ -490,42 +486,43 @@ Predict start!
 len: pred_result 11662
 len: eva_data_set 11662
 Eval start
-----[EVAL] step 1000/11662 | precision: 0.859 | recall: 0.81 | f1 score: 0.834
-----[EVAL] step 2000/11662 | precision: 0.861 | recall: 0.796 | f1 score: 0.827
-----[EVAL] step 3000/11662 | precision: 0.858 | recall: 0.799 | f1 score: 0.827
-----[EVAL] step 4000/11662 | precision: 0.857 | recall: 0.798 | f1 score: 0.826
-----[EVAL] step 5000/11662 | precision: 0.855 | recall: 0.795 | f1 score: 0.824
-----[EVAL] step 6000/11662 | precision: 0.855 | recall: 0.795 | f1 score: 0.824
-----[EVAL] step 7000/11662 | precision: 0.854 | recall: 0.794 | f1 score: 0.823
-----[EVAL] step 8000/11662 | precision: 0.855 | recall: 0.795 | f1 score: 0.824
-----[EVAL] step 9000/11662 | precision: 0.853 | recall: 0.795 | f1 score: 0.823
-----[EVAL] step 10000/11662 | precision: 0.854 | recall: 0.794 | f1 score: 0.823
-----[EVAL] step 11000/11662 | precision: 0.854 | recall: 0.794 | f1 score: 0.823
+----[EVAL] step 1000/11662 | precision: 0.846 | recall: 0.857 | f1 score: 0.851
+----[EVAL] step 2000/11662 | precision: 0.843 | recall: 0.847 | f1 score: 0.845
+----[EVAL] step 3000/11662 | precision: 0.841 | recall: 0.849 | f1 score: 0.845
+----[EVAL] step 4000/11662 | precision: 0.841 | recall: 0.851 | f1 score: 0.846
+----[EVAL] step 5000/11662 | precision: 0.837 | recall: 0.849 | f1 score: 0.843
+----[EVAL] step 6000/11662 | precision: 0.838 | recall: 0.849 | f1 score: 0.843
+----[EVAL] step 7000/11662 | precision: 0.835 | recall: 0.847 | f1 score: 0.841
+----[EVAL] step 8000/11662 | precision: 0.837 | recall: 0.847 | f1 score: 0.842
+----[EVAL] step 9000/11662 | precision: 0.837 | recall: 0.847 | f1 score: 0.842
+----[EVAL] step 10000/11662 | precision: 0.837 | recall: 0.846 | f1 score: 0.841
+----[EVAL] step 11000/11662 | precision: 0.835 | recall: 0.846 | f1 score: 0.84
 ====================================================================================================
-[FINAL] | precision: 0.854 | recall: 0.795 | f1 score: 0.823
+[FINAL] | precision: 0.835 | recall: 0.846 | f1 score: 0.84
 ====================================================================================================
+Checkpoint saved successfully, current best socre is 0.84
 EPOCH: 5/15
-----[TRAIN] step: 1280/27216 | loss: 0.0844
-----[TRAIN] step: 2560/27216 | loss: 0.0811
-----[TRAIN] step: 3840/27216 | loss: 0.0859
-----[TRAIN] step: 5120/27216 | loss: 0.0847
-----[TRAIN] step: 6400/27216 | loss: 0.0816
-----[TRAIN] step: 7680/27216 | loss: 0.0835
-----[TRAIN] step: 8960/27216 | loss: 0.0796
-----[TRAIN] step: 10240/27216 | loss: 0.0857
-----[TRAIN] step: 11520/27216 | loss: 0.0818
-----[TRAIN] step: 12800/27216 | loss: 0.0774
-----[TRAIN] step: 14080/27216 | loss: 0.0804
-----[TRAIN] step: 15360/27216 | loss: 0.0769
-----[TRAIN] step: 16640/27216 | loss: 0.0819
-----[TRAIN] step: 17920/27216 | loss: 0.0825
-----[TRAIN] step: 19200/27216 | loss: 0.0788
-----[TRAIN] step: 20480/27216 | loss: 0.0819
-----[TRAIN] step: 21760/27216 | loss: 0.0769
-----[TRAIN] step: 23040/27216 | loss: 0.0794
-----[TRAIN] step: 24320/27216 | loss: 0.0768
-----[TRAIN] step: 25600/27216 | loss: 0.0746
-----[TRAIN] step: 26880/27216 | loss: 0.0768
+----[TRAIN] step: 1280/27216 | loss: 0.0980
+----[TRAIN] step: 2560/27216 | loss: 0.0985
+----[TRAIN] step: 3840/27216 | loss: 0.0988
+----[TRAIN] step: 5120/27216 | loss: 0.1000
+----[TRAIN] step: 6400/27216 | loss: 0.0931
+----[TRAIN] step: 7680/27216 | loss: 0.0978
+----[TRAIN] step: 8960/27216 | loss: 0.0982
+----[TRAIN] step: 10240/27216 | loss: 0.1051
+----[TRAIN] step: 11520/27216 | loss: 0.1019
+----[TRAIN] step: 12800/27216 | loss: 0.1034
+----[TRAIN] step: 14080/27216 | loss: 0.0923
+----[TRAIN] step: 15360/27216 | loss: 0.0998
+----[TRAIN] step: 16640/27216 | loss: 0.1108
+----[TRAIN] step: 17920/27216 | loss: 0.0997
+----[TRAIN] step: 19200/27216 | loss: 0.1020
+----[TRAIN] step: 20480/27216 | loss: 0.1019
+----[TRAIN] step: 21760/27216 | loss: 0.1143
+----[TRAIN] step: 23040/27216 | loss: 0.1004
+----[TRAIN] step: 24320/27216 | loss: 0.0998
+----[TRAIN] step: 25600/27216 | loss: 0.1040
+----[TRAIN] step: 26880/27216 | loss: 0.0998
 use cuda=========================
 use cuda=========================
 Reload preprocessed data successfully~
@@ -544,43 +541,43 @@ Predict start!
 len: pred_result 11662
 len: eva_data_set 11662
 Eval start
-----[EVAL] step 1000/11662 | precision: 0.84 | recall: 0.843 | f1 score: 0.841
-----[EVAL] step 2000/11662 | precision: 0.841 | recall: 0.834 | f1 score: 0.837
-----[EVAL] step 3000/11662 | precision: 0.838 | recall: 0.834 | f1 score: 0.836
-----[EVAL] step 4000/11662 | precision: 0.839 | recall: 0.833 | f1 score: 0.836
-----[EVAL] step 5000/11662 | precision: 0.836 | recall: 0.831 | f1 score: 0.833
-----[EVAL] step 6000/11662 | precision: 0.838 | recall: 0.831 | f1 score: 0.834
-----[EVAL] step 7000/11662 | precision: 0.835 | recall: 0.83 | f1 score: 0.832
-----[EVAL] step 8000/11662 | precision: 0.836 | recall: 0.832 | f1 score: 0.834
-----[EVAL] step 9000/11662 | precision: 0.836 | recall: 0.831 | f1 score: 0.833
-----[EVAL] step 10000/11662 | precision: 0.836 | recall: 0.83 | f1 score: 0.833
-----[EVAL] step 11000/11662 | precision: 0.836 | recall: 0.83 | f1 score: 0.833
+----[EVAL] step 1000/11662 | precision: 0.884 | recall: 0.827 | f1 score: 0.855
+----[EVAL] step 2000/11662 | precision: 0.885 | recall: 0.818 | f1 score: 0.85
+----[EVAL] step 3000/11662 | precision: 0.881 | recall: 0.82 | f1 score: 0.849
+----[EVAL] step 4000/11662 | precision: 0.881 | recall: 0.82 | f1 score: 0.849
+----[EVAL] step 5000/11662 | precision: 0.879 | recall: 0.815 | f1 score: 0.846
+----[EVAL] step 6000/11662 | precision: 0.881 | recall: 0.814 | f1 score: 0.846
+----[EVAL] step 7000/11662 | precision: 0.879 | recall: 0.812 | f1 score: 0.844
+----[EVAL] step 8000/11662 | precision: 0.88 | recall: 0.812 | f1 score: 0.845
+----[EVAL] step 9000/11662 | precision: 0.88 | recall: 0.812 | f1 score: 0.845
+----[EVAL] step 10000/11662 | precision: 0.88 | recall: 0.811 | f1 score: 0.844
+----[EVAL] step 11000/11662 | precision: 0.88 | recall: 0.811 | f1 score: 0.844
 ====================================================================================================
-[FINAL] | precision: 0.836 | recall: 0.83 | f1 score: 0.833
+[FINAL] | precision: 0.88 | recall: 0.812 | f1 score: 0.845
 ====================================================================================================
-Checkpoint saved successfully, current best socre is 0.833
+Checkpoint saved successfully, current best socre is 0.845
 EPOCH: 6/15
-----[TRAIN] step: 1280/27216 | loss: 0.0791
-----[TRAIN] step: 2560/27216 | loss: 0.0756
-----[TRAIN] step: 3840/27216 | loss: 0.0723
-----[TRAIN] step: 5120/27216 | loss: 0.0750
-----[TRAIN] step: 6400/27216 | loss: 0.0764
-----[TRAIN] step: 7680/27216 | loss: 0.0736
-----[TRAIN] step: 8960/27216 | loss: 0.0776
-----[TRAIN] step: 10240/27216 | loss: 0.0712
-----[TRAIN] step: 11520/27216 | loss: 0.0736
-----[TRAIN] step: 12800/27216 | loss: 0.0713
-----[TRAIN] step: 14080/27216 | loss: 0.0737
-----[TRAIN] step: 15360/27216 | loss: 0.0757
-----[TRAIN] step: 16640/27216 | loss: 0.0737
-----[TRAIN] step: 17920/27216 | loss: 0.0726
-----[TRAIN] step: 19200/27216 | loss: 0.0713
-----[TRAIN] step: 20480/27216 | loss: 0.0703
-----[TRAIN] step: 21760/27216 | loss: 0.0769
-----[TRAIN] step: 23040/27216 | loss: 0.0735
-----[TRAIN] step: 24320/27216 | loss: 0.0762
-----[TRAIN] step: 25600/27216 | loss: 0.0723
-----[TRAIN] step: 26880/27216 | loss: 0.0770
+----[TRAIN] step: 1280/27216 | loss: 0.0790
+----[TRAIN] step: 2560/27216 | loss: 0.0793
+----[TRAIN] step: 3840/27216 | loss: 0.0874
+----[TRAIN] step: 5120/27216 | loss: 0.0885
+----[TRAIN] step: 6400/27216 | loss: 0.0854
+----[TRAIN] step: 7680/27216 | loss: 0.0914
+----[TRAIN] step: 8960/27216 | loss: 0.0870
+----[TRAIN] step: 10240/27216 | loss: 0.0799
+----[TRAIN] step: 11520/27216 | loss: 0.0944
+----[TRAIN] step: 12800/27216 | loss: 0.0900
+----[TRAIN] step: 14080/27216 | loss: 0.0856
+----[TRAIN] step: 15360/27216 | loss: 0.0843
+----[TRAIN] step: 16640/27216 | loss: 0.0855
+----[TRAIN] step: 17920/27216 | loss: 0.0890
+----[TRAIN] step: 19200/27216 | loss: 0.0862
+----[TRAIN] step: 20480/27216 | loss: 0.0950
+----[TRAIN] step: 21760/27216 | loss: 0.0961
+----[TRAIN] step: 23040/27216 | loss: 0.0851
+----[TRAIN] step: 24320/27216 | loss: 0.0874
+----[TRAIN] step: 25600/27216 | loss: 0.0935
+----[TRAIN] step: 26880/27216 | loss: 0.0884
 use cuda=========================
 use cuda=========================
 Reload preprocessed data successfully~
@@ -599,42 +596,42 @@ Predict start!
 len: pred_result 11662
 len: eva_data_set 11662
 Eval start
-----[EVAL] step 1000/11662 | precision: 0.853 | recall: 0.815 | f1 score: 0.834
-----[EVAL] step 2000/11662 | precision: 0.852 | recall: 0.8 | f1 score: 0.825
-----[EVAL] step 3000/11662 | precision: 0.85 | recall: 0.8 | f1 score: 0.824
-----[EVAL] step 4000/11662 | precision: 0.85 | recall: 0.799 | f1 score: 0.824
-----[EVAL] step 5000/11662 | precision: 0.848 | recall: 0.795 | f1 score: 0.821
-----[EVAL] step 6000/11662 | precision: 0.849 | recall: 0.795 | f1 score: 0.821
-----[EVAL] step 7000/11662 | precision: 0.847 | recall: 0.794 | f1 score: 0.82
-----[EVAL] step 8000/11662 | precision: 0.848 | recall: 0.795 | f1 score: 0.821
-----[EVAL] step 9000/11662 | precision: 0.848 | recall: 0.795 | f1 score: 0.821
-----[EVAL] step 10000/11662 | precision: 0.848 | recall: 0.793 | f1 score: 0.82
-----[EVAL] step 11000/11662 | precision: 0.848 | recall: 0.794 | f1 score: 0.82
+----[EVAL] step 1000/11662 | precision: 0.869 | recall: 0.843 | f1 score: 0.856
+----[EVAL] step 2000/11662 | precision: 0.869 | recall: 0.835 | f1 score: 0.852
+----[EVAL] step 3000/11662 | precision: 0.864 | recall: 0.837 | f1 score: 0.85
+----[EVAL] step 4000/11662 | precision: 0.862 | recall: 0.836 | f1 score: 0.849
+----[EVAL] step 5000/11662 | precision: 0.86 | recall: 0.832 | f1 score: 0.846
+----[EVAL] step 6000/11662 | precision: 0.861 | recall: 0.832 | f1 score: 0.846
+----[EVAL] step 7000/11662 | precision: 0.858 | recall: 0.83 | f1 score: 0.844
+----[EVAL] step 8000/11662 | precision: 0.86 | recall: 0.831 | f1 score: 0.845
+----[EVAL] step 9000/11662 | precision: 0.859 | recall: 0.831 | f1 score: 0.845
+----[EVAL] step 10000/11662 | precision: 0.86 | recall: 0.83 | f1 score: 0.845
+----[EVAL] step 11000/11662 | precision: 0.858 | recall: 0.83 | f1 score: 0.844
 ====================================================================================================
-[FINAL] | precision: 0.848 | recall: 0.794 | f1 score: 0.82
+[FINAL] | precision: 0.858 | recall: 0.831 | f1 score: 0.844
 ====================================================================================================
 EPOCH: 7/15
-----[TRAIN] step: 1280/27216 | loss: 0.0732
-----[TRAIN] step: 2560/27216 | loss: 0.0681
-----[TRAIN] step: 3840/27216 | loss: 0.0668
-----[TRAIN] step: 5120/27216 | loss: 0.0691
-----[TRAIN] step: 6400/27216 | loss: 0.0681
-----[TRAIN] step: 7680/27216 | loss: 0.0699
-----[TRAIN] step: 8960/27216 | loss: 0.0723
-----[TRAIN] step: 10240/27216 | loss: 0.0701
-----[TRAIN] step: 11520/27216 | loss: 0.0719
-----[TRAIN] step: 12800/27216 | loss: 0.0685
-----[TRAIN] step: 14080/27216 | loss: 0.0682
-----[TRAIN] step: 15360/27216 | loss: 0.0713
-----[TRAIN] step: 16640/27216 | loss: 0.0679
-----[TRAIN] step: 17920/27216 | loss: 0.0686
-----[TRAIN] step: 19200/27216 | loss: 0.0693
-----[TRAIN] step: 20480/27216 | loss: 0.0699
-----[TRAIN] step: 21760/27216 | loss: 0.0672
-----[TRAIN] step: 23040/27216 | loss: 0.0682
-----[TRAIN] step: 24320/27216 | loss: 0.0650
-----[TRAIN] step: 25600/27216 | loss: 0.0674
-----[TRAIN] step: 26880/27216 | loss: 0.0701
+----[TRAIN] step: 1280/27216 | loss: 0.0795
+----[TRAIN] step: 2560/27216 | loss: 0.0680
+----[TRAIN] step: 3840/27216 | loss: 0.0699
+----[TRAIN] step: 5120/27216 | loss: 0.0743
+----[TRAIN] step: 6400/27216 | loss: 0.0675
+----[TRAIN] step: 7680/27216 | loss: 0.0785
+----[TRAIN] step: 8960/27216 | loss: 0.0700
+----[TRAIN] step: 10240/27216 | loss: 0.0733
+----[TRAIN] step: 11520/27216 | loss: 0.0717
+----[TRAIN] step: 12800/27216 | loss: 0.0751
+----[TRAIN] step: 14080/27216 | loss: 0.0774
+----[TRAIN] step: 15360/27216 | loss: 0.0815
+----[TRAIN] step: 16640/27216 | loss: 0.0845
+----[TRAIN] step: 17920/27216 | loss: 0.0770
+----[TRAIN] step: 19200/27216 | loss: 0.0746
+----[TRAIN] step: 20480/27216 | loss: 0.0742
+----[TRAIN] step: 21760/27216 | loss: 0.0837
+----[TRAIN] step: 23040/27216 | loss: 0.0777
+----[TRAIN] step: 24320/27216 | loss: 0.0758
+----[TRAIN] step: 25600/27216 | loss: 0.0751
+----[TRAIN] step: 26880/27216 | loss: 0.0816
 use cuda=========================
 use cuda=========================
 Reload preprocessed data successfully~
@@ -653,43 +650,42 @@ Predict start!
 len: pred_result 11662
 len: eva_data_set 11662
 Eval start
-----[EVAL] step 1000/11662 | precision: 0.856 | recall: 0.841 | f1 score: 0.848
-----[EVAL] step 2000/11662 | precision: 0.86 | recall: 0.831 | f1 score: 0.845
-----[EVAL] step 3000/11662 | precision: 0.854 | recall: 0.829 | f1 score: 0.841
-----[EVAL] step 4000/11662 | precision: 0.852 | recall: 0.828 | f1 score: 0.84
-----[EVAL] step 5000/11662 | precision: 0.848 | recall: 0.825 | f1 score: 0.836
-----[EVAL] step 6000/11662 | precision: 0.85 | recall: 0.825 | f1 score: 0.837
-----[EVAL] step 7000/11662 | precision: 0.848 | recall: 0.822 | f1 score: 0.835
-----[EVAL] step 8000/11662 | precision: 0.849 | recall: 0.823 | f1 score: 0.836
-----[EVAL] step 9000/11662 | precision: 0.849 | recall: 0.823 | f1 score: 0.836
-----[EVAL] step 10000/11662 | precision: 0.849 | recall: 0.822 | f1 score: 0.835
-----[EVAL] step 11000/11662 | precision: 0.848 | recall: 0.822 | f1 score: 0.835
+----[EVAL] step 1000/11662 | precision: 0.861 | recall: 0.854 | f1 score: 0.857
+----[EVAL] step 2000/11662 | precision: 0.865 | recall: 0.839 | f1 score: 0.852
+----[EVAL] step 3000/11662 | precision: 0.861 | recall: 0.839 | f1 score: 0.85
+----[EVAL] step 4000/11662 | precision: 0.86 | recall: 0.839 | f1 score: 0.849
+----[EVAL] step 5000/11662 | precision: 0.858 | recall: 0.836 | f1 score: 0.847
+----[EVAL] step 6000/11662 | precision: 0.86 | recall: 0.836 | f1 score: 0.848
+----[EVAL] step 7000/11662 | precision: 0.857 | recall: 0.833 | f1 score: 0.845
+----[EVAL] step 8000/11662 | precision: 0.858 | recall: 0.834 | f1 score: 0.846
+----[EVAL] step 9000/11662 | precision: 0.858 | recall: 0.834 | f1 score: 0.846
+----[EVAL] step 10000/11662 | precision: 0.858 | recall: 0.833 | f1 score: 0.845
+----[EVAL] step 11000/11662 | precision: 0.858 | recall: 0.833 | f1 score: 0.845
 ====================================================================================================
-[FINAL] | precision: 0.849 | recall: 0.822 | f1 score: 0.835
+[FINAL] | precision: 0.858 | recall: 0.833 | f1 score: 0.845
 ====================================================================================================
-Checkpoint saved successfully, current best socre is 0.835
 EPOCH: 8/15
-----[TRAIN] step: 1280/27216 | loss: 0.0639
-----[TRAIN] step: 2560/27216 | loss: 0.0686
-----[TRAIN] step: 3840/27216 | loss: 0.0651
-----[TRAIN] step: 5120/27216 | loss: 0.0658
-----[TRAIN] step: 6400/27216 | loss: 0.0674
-----[TRAIN] step: 7680/27216 | loss: 0.0645
-----[TRAIN] step: 8960/27216 | loss: 0.0692
-----[TRAIN] step: 10240/27216 | loss: 0.0645
-----[TRAIN] step: 11520/27216 | loss: 0.0628
-----[TRAIN] step: 12800/27216 | loss: 0.0674
-----[TRAIN] step: 14080/27216 | loss: 0.0649
-----[TRAIN] step: 15360/27216 | loss: 0.0633
-----[TRAIN] step: 16640/27216 | loss: 0.0689
-----[TRAIN] step: 17920/27216 | loss: 0.0659
-----[TRAIN] step: 19200/27216 | loss: 0.0644
-----[TRAIN] step: 20480/27216 | loss: 0.0666
-----[TRAIN] step: 21760/27216 | loss: 0.0664
-----[TRAIN] step: 23040/27216 | loss: 0.0669
-----[TRAIN] step: 24320/27216 | loss: 0.0627
-----[TRAIN] step: 25600/27216 | loss: 0.0677
-----[TRAIN] step: 26880/27216 | loss: 0.0663
+----[TRAIN] step: 1280/27216 | loss: 0.0665
+----[TRAIN] step: 2560/27216 | loss: 0.0637
+----[TRAIN] step: 3840/27216 | loss: 0.0669
+----[TRAIN] step: 5120/27216 | loss: 0.0690
+----[TRAIN] step: 6400/27216 | loss: 0.0630
+----[TRAIN] step: 7680/27216 | loss: 0.0639
+----[TRAIN] step: 8960/27216 | loss: 0.0670
+----[TRAIN] step: 10240/27216 | loss: 0.0673
+----[TRAIN] step: 11520/27216 | loss: 0.0694
+----[TRAIN] step: 12800/27216 | loss: 0.0643
+----[TRAIN] step: 14080/27216 | loss: 0.0644
+----[TRAIN] step: 15360/27216 | loss: 0.0641
+----[TRAIN] step: 16640/27216 | loss: 0.0643
+----[TRAIN] step: 17920/27216 | loss: 0.0680
+----[TRAIN] step: 19200/27216 | loss: 0.0724
+----[TRAIN] step: 20480/27216 | loss: 0.0689
+----[TRAIN] step: 21760/27216 | loss: 0.0661
+----[TRAIN] step: 23040/27216 | loss: 0.0677
+----[TRAIN] step: 24320/27216 | loss: 0.0698
+----[TRAIN] step: 25600/27216 | loss: 0.0661
+----[TRAIN] step: 26880/27216 | loss: 0.0705
 use cuda=========================
 use cuda=========================
 Reload preprocessed data successfully~
@@ -708,29 +704,240 @@ Predict start!
 len: pred_result 11662
 len: eva_data_set 11662
 Eval start
-----[EVAL] step 1000/11662 | precision: 0.848 | recall: 0.835 | f1 score: 0.841
-----[EVAL] step 2000/11662 | precision: 0.848 | recall: 0.823 | f1 score: 0.835
-----[EVAL] step 3000/11662 | precision: 0.847 | recall: 0.824 | f1 score: 0.835
-----[EVAL] step 4000/11662 | precision: 0.845 | recall: 0.824 | f1 score: 0.834
-----[EVAL] step 5000/11662 | precision: 0.843 | recall: 0.822 | f1 score: 0.832
-----[EVAL] step 6000/11662 | precision: 0.845 | recall: 0.822 | f1 score: 0.833
-----[EVAL] step 7000/11662 | precision: 0.842 | recall: 0.82 | f1 score: 0.831
-----[EVAL] step 8000/11662 | precision: 0.844 | recall: 0.821 | f1 score: 0.832
-----[EVAL] step 9000/11662 | precision: 0.844 | recall: 0.82 | f1 score: 0.832
-----[EVAL] step 10000/11662 | precision: 0.845 | recall: 0.82 | f1 score: 0.832
-----[EVAL] step 11000/11662 | precision: 0.844 | recall: 0.82 | f1 score: 0.832
+----[EVAL] step 1000/11662 | precision: 0.873 | recall: 0.835 | f1 score: 0.854
+----[EVAL] step 2000/11662 | precision: 0.875 | recall: 0.826 | f1 score: 0.85
+----[EVAL] step 3000/11662 | precision: 0.869 | recall: 0.827 | f1 score: 0.847
+----[EVAL] step 4000/11662 | precision: 0.87 | recall: 0.829 | f1 score: 0.849
+----[EVAL] step 5000/11662 | precision: 0.869 | recall: 0.826 | f1 score: 0.847
+----[EVAL] step 6000/11662 | precision: 0.87 | recall: 0.826 | f1 score: 0.847
+----[EVAL] step 7000/11662 | precision: 0.867 | recall: 0.823 | f1 score: 0.844
+----[EVAL] step 8000/11662 | precision: 0.869 | recall: 0.823 | f1 score: 0.845
+----[EVAL] step 9000/11662 | precision: 0.868 | recall: 0.823 | f1 score: 0.845
+----[EVAL] step 10000/11662 | precision: 0.869 | recall: 0.823 | f1 score: 0.845
+----[EVAL] step 11000/11662 | precision: 0.868 | recall: 0.822 | f1 score: 0.844
 ====================================================================================================
-[FINAL] | precision: 0.845 | recall: 0.821 | f1 score: 0.833
+[FINAL] | precision: 0.868 | recall: 0.822 | f1 score: 0.844
 ====================================================================================================
 EPOCH: 9/15
-----[TRAIN] step: 1280/27216 | loss: 0.0623
-----[TRAIN] step: 2560/27216 | loss: 0.0638
-----[TRAIN] step: 3840/27216 | loss: 0.0674
-----[TRAIN] step: 5120/27216 | loss: 0.0642
-----[TRAIN] step: 6400/27216 | loss: 0.0652
-----[TRAIN] step: 7680/27216 | loss: 0.0643
-----[TRAIN] step: 8960/27216 | loss: 0.0567
-----[TRAIN] step: 10240/27216 | loss: 0.0611
-----[TRAIN] step: 11520/27216 | loss: 0.0614
-----[TRAIN] step: 12800/27216 | loss: 0.0644
-----[TRAIN] step: 14080/27216 | loss: 0.0674
+----[TRAIN] step: 1280/27216 | loss: 0.0536
+----[TRAIN] step: 2560/27216 | loss: 0.0588
+----[TRAIN] step: 3840/27216 | loss: 0.0531
+----[TRAIN] step: 5120/27216 | loss: 0.0563
+----[TRAIN] step: 6400/27216 | loss: 0.0598
+----[TRAIN] step: 7680/27216 | loss: 0.0552
+----[TRAIN] step: 8960/27216 | loss: 0.0564
+----[TRAIN] step: 10240/27216 | loss: 0.0527
+----[TRAIN] step: 11520/27216 | loss: 0.0557
+----[TRAIN] step: 12800/27216 | loss: 0.0594
+----[TRAIN] step: 14080/27216 | loss: 0.0570
+----[TRAIN] step: 15360/27216 | loss: 0.0524
+----[TRAIN] step: 16640/27216 | loss: 0.0592
+----[TRAIN] step: 17920/27216 | loss: 0.0487
+----[TRAIN] step: 19200/27216 | loss: 0.0583
+----[TRAIN] step: 20480/27216 | loss: 0.0598
+----[TRAIN] step: 21760/27216 | loss: 0.0540
+----[TRAIN] step: 23040/27216 | loss: 0.0587
+----[TRAIN] step: 24320/27216 | loss: 0.0568
+----[TRAIN] step: 25600/27216 | loss: 0.0653
+----[TRAIN] step: 26880/27216 | loss: 0.0620
+use cuda=========================
+use cuda=========================
+Reload preprocessed data successfully~
+Predict start!
+----[PREDICT] step 1000/11662
+----[PREDICT] step 2000/11662
+----[PREDICT] step 3000/11662
+----[PREDICT] step 4000/11662
+----[PREDICT] step 5000/11662
+----[PREDICT] step 6000/11662
+----[PREDICT] step 7000/11662
+----[PREDICT] step 8000/11662
+----[PREDICT] step 9000/11662
+----[PREDICT] step 10000/11662
+----[PREDICT] step 11000/11662
+len: pred_result 11662
+len: eva_data_set 11662
+Eval start
+----[EVAL] step 1000/11662 | precision: 0.862 | recall: 0.85 | f1 score: 0.856
+----[EVAL] step 2000/11662 | precision: 0.864 | recall: 0.841 | f1 score: 0.852
+----[EVAL] step 3000/11662 | precision: 0.86 | recall: 0.843 | f1 score: 0.851
+----[EVAL] step 4000/11662 | precision: 0.86 | recall: 0.842 | f1 score: 0.851
+----[EVAL] step 5000/11662 | precision: 0.857 | recall: 0.838 | f1 score: 0.847
+----[EVAL] step 6000/11662 | precision: 0.858 | recall: 0.838 | f1 score: 0.848
+----[EVAL] step 7000/11662 | precision: 0.856 | recall: 0.836 | f1 score: 0.846
+----[EVAL] step 8000/11662 | precision: 0.857 | recall: 0.837 | f1 score: 0.847
+----[EVAL] step 9000/11662 | precision: 0.857 | recall: 0.836 | f1 score: 0.846
+----[EVAL] step 10000/11662 | precision: 0.857 | recall: 0.836 | f1 score: 0.846
+----[EVAL] step 11000/11662 | precision: 0.856 | recall: 0.835 | f1 score: 0.845
+====================================================================================================
+[FINAL] | precision: 0.856 | recall: 0.835 | f1 score: 0.845
+====================================================================================================
+EPOCH: 10/15
+----[TRAIN] step: 1280/27216 | loss: 0.0421
+----[TRAIN] step: 2560/27216 | loss: 0.0489
+----[TRAIN] step: 3840/27216 | loss: 0.0442
+----[TRAIN] step: 5120/27216 | loss: 0.0448
+----[TRAIN] step: 6400/27216 | loss: 0.0463
+----[TRAIN] step: 7680/27216 | loss: 0.0499
+----[TRAIN] step: 8960/27216 | loss: 0.0456
+----[TRAIN] step: 10240/27216 | loss: 0.0458
+----[TRAIN] step: 11520/27216 | loss: 0.0457
+----[TRAIN] step: 12800/27216 | loss: 0.0514
+----[TRAIN] step: 14080/27216 | loss: 0.0543
+----[TRAIN] step: 15360/27216 | loss: 0.0459
+----[TRAIN] step: 16640/27216 | loss: 0.0509
+----[TRAIN] step: 17920/27216 | loss: 0.0496
+----[TRAIN] step: 19200/27216 | loss: 0.0499
+----[TRAIN] step: 20480/27216 | loss: 0.0513
+----[TRAIN] step: 21760/27216 | loss: 0.0551
+----[TRAIN] step: 23040/27216 | loss: 0.0525
+----[TRAIN] step: 24320/27216 | loss: 0.0534
+----[TRAIN] step: 25600/27216 | loss: 0.0532
+----[TRAIN] step: 26880/27216 | loss: 0.0528
+use cuda=========================
+use cuda=========================
+Reload preprocessed data successfully~
+Predict start!
+----[PREDICT] step 1000/11662
+----[PREDICT] step 2000/11662
+----[PREDICT] step 3000/11662
+----[PREDICT] step 4000/11662
+----[PREDICT] step 5000/11662
+----[PREDICT] step 6000/11662
+----[PREDICT] step 7000/11662
+----[PREDICT] step 8000/11662
+----[PREDICT] step 9000/11662
+----[PREDICT] step 10000/11662
+----[PREDICT] step 11000/11662
+len: pred_result 11662
+len: eva_data_set 11662
+Eval start
+----[EVAL] step 1000/11662 | precision: 0.869 | recall: 0.844 | f1 score: 0.856
+----[EVAL] step 2000/11662 | precision: 0.867 | recall: 0.832 | f1 score: 0.849
+----[EVAL] step 3000/11662 | precision: 0.862 | recall: 0.833 | f1 score: 0.847
+----[EVAL] step 4000/11662 | precision: 0.861 | recall: 0.834 | f1 score: 0.847
+----[EVAL] step 5000/11662 | precision: 0.859 | recall: 0.831 | f1 score: 0.845
+----[EVAL] step 6000/11662 | precision: 0.86 | recall: 0.831 | f1 score: 0.845
+----[EVAL] step 7000/11662 | precision: 0.857 | recall: 0.829 | f1 score: 0.843
+----[EVAL] step 8000/11662 | precision: 0.859 | recall: 0.829 | f1 score: 0.844
+----[EVAL] step 9000/11662 | precision: 0.859 | recall: 0.829 | f1 score: 0.844
+----[EVAL] step 10000/11662 | precision: 0.859 | recall: 0.828 | f1 score: 0.843
+----[EVAL] step 11000/11662 | precision: 0.858 | recall: 0.827 | f1 score: 0.842
+====================================================================================================
+[FINAL] | precision: 0.859 | recall: 0.828 | f1 score: 0.843
+====================================================================================================
+EPOCH: 11/15
+----[TRAIN] step: 1280/27216 | loss: 0.0379
+----[TRAIN] step: 2560/27216 | loss: 0.0405
+----[TRAIN] step: 3840/27216 | loss: 0.0414
+----[TRAIN] step: 5120/27216 | loss: 0.0399
+----[TRAIN] step: 6400/27216 | loss: 0.0401
+----[TRAIN] step: 7680/27216 | loss: 0.0461
+----[TRAIN] step: 8960/27216 | loss: 0.0391
+----[TRAIN] step: 10240/27216 | loss: 0.0415
+----[TRAIN] step: 11520/27216 | loss: 0.0432
+----[TRAIN] step: 12800/27216 | loss: 0.0446
+----[TRAIN] step: 14080/27216 | loss: 0.0374
+----[TRAIN] step: 15360/27216 | loss: 0.0420
+----[TRAIN] step: 16640/27216 | loss: 0.0421
+----[TRAIN] step: 17920/27216 | loss: 0.0405
+----[TRAIN] step: 19200/27216 | loss: 0.0455
+----[TRAIN] step: 20480/27216 | loss: 0.0437
+----[TRAIN] step: 21760/27216 | loss: 0.0424
+----[TRAIN] step: 23040/27216 | loss: 0.0475
+----[TRAIN] step: 24320/27216 | loss: 0.0446
+----[TRAIN] step: 25600/27216 | loss: 0.0504
+----[TRAIN] step: 26880/27216 | loss: 0.0438
+use cuda=========================
+use cuda=========================
+Reload preprocessed data successfully~
+Predict start!
+----[PREDICT] step 1000/11662
+----[PREDICT] step 2000/11662
+----[PREDICT] step 3000/11662
+----[PREDICT] step 4000/11662
+----[PREDICT] step 5000/11662
+----[PREDICT] step 6000/11662
+----[PREDICT] step 7000/11662
+----[PREDICT] step 8000/11662
+----[PREDICT] step 9000/11662
+----[PREDICT] step 10000/11662
+----[PREDICT] step 11000/11662
+len: pred_result 11662
+len: eva_data_set 11662
+Eval start
+----[EVAL] step 1000/11662 | precision: 0.867 | recall: 0.842 | f1 score: 0.854
+----[EVAL] step 2000/11662 | precision: 0.868 | recall: 0.835 | f1 score: 0.851
+----[EVAL] step 3000/11662 | precision: 0.864 | recall: 0.836 | f1 score: 0.85
+----[EVAL] step 4000/11662 | precision: 0.864 | recall: 0.836 | f1 score: 0.85
+----[EVAL] step 5000/11662 | precision: 0.862 | recall: 0.833 | f1 score: 0.847
+----[EVAL] step 6000/11662 | precision: 0.862 | recall: 0.832 | f1 score: 0.847
+----[EVAL] step 7000/11662 | precision: 0.86 | recall: 0.83 | f1 score: 0.845
+----[EVAL] step 8000/11662 | precision: 0.861 | recall: 0.831 | f1 score: 0.846
+----[EVAL] step 9000/11662 | precision: 0.86 | recall: 0.831 | f1 score: 0.845
+----[EVAL] step 10000/11662 | precision: 0.86 | recall: 0.83 | f1 score: 0.845
+----[EVAL] step 11000/11662 | precision: 0.859 | recall: 0.83 | f1 score: 0.844
+====================================================================================================
+[FINAL] | precision: 0.859 | recall: 0.83 | f1 score: 0.844
+====================================================================================================
+EPOCH: 12/15
+----[TRAIN] step: 1280/27216 | loss: 0.0385
+----[TRAIN] step: 2560/27216 | loss: 0.0343
+----[TRAIN] step: 3840/27216 | loss: 0.0298
+----[TRAIN] step: 5120/27216 | loss: 0.0355
+----[TRAIN] step: 6400/27216 | loss: 0.0374
+----[TRAIN] step: 7680/27216 | loss: 0.0333
+----[TRAIN] step: 8960/27216 | loss: 0.0337
+----[TRAIN] step: 10240/27216 | loss: 0.0339
+----[TRAIN] step: 11520/27216 | loss: 0.0332
+----[TRAIN] step: 12800/27216 | loss: 0.0350
+----[TRAIN] step: 14080/27216 | loss: 0.0381
+----[TRAIN] step: 15360/27216 | loss: 0.0339
+----[TRAIN] step: 16640/27216 | loss: 0.0391
+----[TRAIN] step: 17920/27216 | loss: 0.0413
+----[TRAIN] step: 19200/27216 | loss: 0.0383
+----[TRAIN] step: 20480/27216 | loss: 0.0386
+----[TRAIN] step: 21760/27216 | loss: 0.0392
+----[TRAIN] step: 23040/27216 | loss: 0.0365
+----[TRAIN] step: 24320/27216 | loss: 0.0375
+----[TRAIN] step: 25600/27216 | loss: 0.0365
+----[TRAIN] step: 26880/27216 | loss: 0.0388
+use cuda=========================
+use cuda=========================
+Reload preprocessed data successfully~
+Predict start!
+----[PREDICT] step 1000/11662
+----[PREDICT] step 2000/11662
+----[PREDICT] step 3000/11662
+----[PREDICT] step 4000/11662
+----[PREDICT] step 5000/11662
+----[PREDICT] step 6000/11662
+----[PREDICT] step 7000/11662
+----[PREDICT] step 8000/11662
+----[PREDICT] step 9000/11662
+----[PREDICT] step 10000/11662
+----[PREDICT] step 11000/11662
+len: pred_result 11662
+len: eva_data_set 11662
+Eval start
+----[EVAL] step 1000/11662 | precision: 0.848 | recall: 0.847 | f1 score: 0.847
+----[EVAL] step 2000/11662 | precision: 0.851 | recall: 0.84 | f1 score: 0.845
+----[EVAL] step 3000/11662 | precision: 0.847 | recall: 0.842 | f1 score: 0.844
+----[EVAL] step 4000/11662 | precision: 0.846 | recall: 0.843 | f1 score: 0.844
+----[EVAL] step 5000/11662 | precision: 0.843 | recall: 0.839 | f1 score: 0.841
+----[EVAL] step 6000/11662 | precision: 0.845 | recall: 0.839 | f1 score: 0.842
+----[EVAL] step 7000/11662 | precision: 0.842 | recall: 0.837 | f1 score: 0.839
+----[EVAL] step 8000/11662 | precision: 0.843 | recall: 0.839 | f1 score: 0.841
+----[EVAL] step 9000/11662 | precision: 0.843 | recall: 0.839 | f1 score: 0.841
+----[EVAL] step 10000/11662 | precision: 0.843 | recall: 0.838 | f1 score: 0.84
+----[EVAL] step 11000/11662 | precision: 0.842 | recall: 0.837 | f1 score: 0.839
+====================================================================================================
+[FINAL] | precision: 0.843 | recall: 0.838 | f1 score: 0.84
+====================================================================================================
+EPOCH: 13/15
+----[TRAIN] step: 1280/27216 | loss: 0.0334
+----[TRAIN] step: 2560/27216 | loss: 0.0351
+----[TRAIN] step: 3840/27216 | loss: 0.0344
+----[TRAIN] step: 5120/27216 | loss: 0.0324
+----[TRAIN] step: 6400/27216 | loss: 0.0301
+----[TRAIN] step: 7680/27216 | loss: 0.0332

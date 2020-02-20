@@ -174,7 +174,7 @@ class MODEL_TEMP(nn.Module):
 
             temp_score = self.eval_model(data_loader, data_set=eval_dataset, hyper_param=evel_param, use_cuda=use_cuda)
             score_record.append(temp_score)
-            scheduler.step()
+            scheduler.step()   #TODO:
             
             if temp_score[2] > max_score:
                 max_score = temp_score[2]

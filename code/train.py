@@ -8,6 +8,9 @@ from model_bert_lstm_crf import BERT_LSTM_CRF
 from model_bert_mlp import BERT_MLP
 from model_bert_mlp2 import BERT_NER
 from model_bert_crf import BERT_CRF
+
+from model_bert_crf2 import BERT_CRF2
+from model_bert_lstm_crf2 import BERT_LSTM_CRF2
 from model_lstm_crf_baseline import BASELINE
 
 from rel_model_lstm_crf import REL_BLSTM_CRF
@@ -255,8 +258,12 @@ def main():
     # mymodel = BLSTM_CRF(model_params, show_param=True)   
     # mymodel = BERT_LSTM_CRF(model_params, show_param=True) 
     # mymodel = BERT_MLP(model_params, show_param=True)
-    # mymodel = BERT_NER(model_params, show_param=True)
-    mymodel = BERT_CRF(model_params, show_param=True)
+    mymodel = BERT_NER(model_params, show_param=True)
+    # mymodel = BERT_CRF(model_params, show_param=True)
+    
+
+    # mymodel = BERT_CRF2(model_params, show_param=True)
+    # mymodel = BERT_LSTM_CRF2(model_params, show_param=True)
     # mymodel = BASELINE(model_params, show_param=True)
 
     # mymodel = REL_BLSTM_CRF(model_params, show_param=True)
@@ -277,13 +284,9 @@ def main():
 
     if args.mode == 'train':
         LOGGER.info('===== Start Train')
-        # _train(mymodel, args, data_loader, train_dataset=train_dataset, eval_dataset=eval_dataset, RELOAD_MODEL=None, use_cuda=args.use_cuda)
-        # _train(mymodel, args, data_loader, train_dataset=train_dataset, eval_dataset=eval_dataset, RELOAD_MODEL='', use_cuda=args.use_cuda)
         _train(mymodel, args, data_loader, train_dataset=train_dataset, eval_dataset=eval_dataset, RELOAD_MODEL='model_test.p', use_cuda=args.use_cuda)
 
         LOGGER.info('===== Start Eval')
-        # _eval(mymodel, args, data_loader, data_set=eval_dataset, RELOAD_MODEL='', use_cuda=args.use_cuda)
-        # _eval(mymodel, args, data_loader, data_set=eval_dataset, RELOAD_MODEL='', use_cuda=args.use_cuda)
         _eval(mymodel, args, data_loader, data_set=test_dataset_final, RELOAD_MODEL='model_test.p', use_cuda=args.use_cuda)
 
     if args.mode == 'eval':
