@@ -2,6 +2,8 @@
 !*.py
 !*.sh
 !*.txt
+!*.md
+!*.gitignore
 !code/
 !backup_code/
-!*.gitignore
+
