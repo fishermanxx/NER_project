@@ -4,6 +4,9 @@
 !*.txt
 !*.md
 !*.gitignore
-!code/
-!backup_code/
+!/code/
+
+!/data/
+/data/*
+!/data/*.txt
 

@@ -14,6 +14,7 @@ NER and Relation extraction Project
 # File path:
     ./data/d1/: the dir of dataset
     ./data/s1/: the dir of solution
+    ./data/vocab.txt: the pretrained tokenize dict used by bert
     ./code: the dir of code
     ./readme.md
     ./run.sh
