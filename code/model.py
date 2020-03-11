@@ -10,6 +10,7 @@ from utils import KGDataLoader, Batch_Generator
 
 from utils import my_lr_lambda
 from torch.optim.lr_scheduler import LambdaLR
+from tricks import EMA
 
 class MODEL_TEMP(nn.Module):
     def __init__(self, config={}, show_param=False):
@@ -82,9 +83,15 @@ class MODEL_TEMP(nn.Module):
             @score_record
         '''
         use_cuda = self.use_cuda if use_cuda is None else use_cuda
+        use_ema = True
+
+        ema = EMA(self, mu=0.99) if use_ema else None
         if use_cuda:
             print('use cuda=========================')
             self.cuda()
+
+        if use_ema:
+            ema.register()
 
         EPOCH = hyper_param.get('EPOCH', 3)
         BATCH_SIZE = hyper_param.get('batch_size', 4)
@@ -152,6 +159,9 @@ class MODEL_TEMP(nn.Module):
                 loss_avg.backward()
                 optimizer.step()
 
+                if use_ema:
+                    ema.update()
+
                 loss += loss_avg
                 if use_cuda:
                     loss_record.append(loss_avg.cpu().item())
@@ -172,6 +182,9 @@ class MODEL_TEMP(nn.Module):
                     # print(y_ent[0])
                     # self.train()        
 
+            if use_ema:
+                ema.apply_shadow()
+
             temp_score = self.eval_model(data_loader, data_set=eval_dataset, hyper_param=evel_param, use_cuda=use_cuda)
             score_record.append(temp_score)
             scheduler.step()   #TODO:
@@ -181,6 +194,9 @@ class MODEL_TEMP(nn.Module):
                 save_path = os.path.join(result_dir, model_name)
                 self.save_model(save_path)
                 print(f'Checkpoint saved successfully, current best socre is {max_score}')
+
+            if use_ema:
+                ema.restore()
         log(f'the best score of the model is {max_score}')
         return loss_record, score_record
 

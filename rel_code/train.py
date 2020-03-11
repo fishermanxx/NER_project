@@ -2,18 +2,21 @@ from dataset import AutoKGDataset
 from utils import KGDataLoader, Batch_Generator
 from utils import show_metadata, show_dict_info
 
+from dataloader import KGDataLoader2
+from dataloader3 import KGDataLoader3
 
-from model_lstm_crf import BLSTM_CRF
-from model_bert_lstm_crf import BERT_LSTM_CRF
-from model_bert_mlp import BERT_MLP
+# from model_lstm_crf import BLSTM_CRF
+# from model_bert_lstm_crf import BERT_LSTM_CRF
+# from model_bert_mlp import BERT_MLP
 from model_bert_mlp2 import BERT_NER
-from model_bert_crf import BERT_CRF
+# from model_bert_crf import BERT_CRF
 
 from model_bert_crf2 import BERT_CRF2
 from model_bert_lstm_crf2 import BERT_LSTM_CRF2
 from model_lstm_crf_baseline import BASELINE
 
-from rel_model_lstm_crf import REL_BLSTM_CRF
+# from rel_model_lstm_crf import REL_BLSTM_CRF
+from rel_model_hierarchical import BERT_Hierarchical
 
 from common import get_logger, Timer
 
@@ -23,6 +26,11 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 import argparse
+
+seed = 1
+torch.manual_seed(seed)
+np.random.seed(seed)
+torch.cuda.manual_seed_all(seed)
 
 CPU_TRAIN = 20
 CPU_EVAL = 10
@@ -49,9 +57,9 @@ def _parse_args():
         @args.task
     '''
     root_dir = _here(os.pardir)  ##总目录
-    default_dataset_dir = os.path.join(root_dir, 'data/d1')
-    default_answer_dir = os.path.join(root_dir, 'data/s1')
-    default_code_dir = os.path.join(root_dir, 'code')
+    default_dataset_dir = os.path.join(root_dir, 'data/d4')
+    default_answer_dir = os.path.join(root_dir, 'data/s4')
+    default_code_dir = os.path.join(root_dir, 'rel_code')
     default_result_dir = os.path.join(root_dir, 'result')
 
     default_time_budget = 1200
@@ -126,10 +134,10 @@ def _train(mymodel, args, data_loader, train_dataset=None, eval_dataset=None, RE
     ##TODO:
     if use_cuda:
         train_param = {
-            'EPOCH': 20,         #45  TODO:15
-            'batch_size': 16,    #512   TODO:64
-            'learning_rate_bert': 5e-5,
-            'learning_rate_upper': 1e-3,  #TODO:
+            'EPOCH': 10,         #45  TODO:15
+            'batch_size': 32,    #512   TODO:64
+            'learning_rate_bert': 5e-5,  
+            'learning_rate_upper': 1e-3,  #TODO:1e-3
             'bert_finetune': True,
             'visualize_length': 20, #10
             'isshuffle': True,
@@ -142,7 +150,7 @@ def _train(mymodel, args, data_loader, train_dataset=None, eval_dataset=None, RE
             'EPOCH': CPU_EPOCH,         #45
             'batch_size': CPU_BATCHSIZE,    #512
             'learning_rate_bert': 5e-5,
-            'learning_rate_upper': 5e-3,
+            'learning_rate_upper': 1e-3,
             'bert_finetune': False,
             'visualize_length': CPU_VISUAL, #10
             'isshuffle': True,
@@ -193,7 +201,7 @@ def _predict(mymodel, args, data_loader, data_set=None, RELOAD_MODEL=None, use_c
     with timer.time_limit('predict'):
         mymodel.predict(data_loader, data_set=data_set, hyper_param=hyper_param, rebuild=True)   
 
-def _eval(mymodel: BLSTM_CRF, args, data_loader, data_set=None, RELOAD_MODEL=None, use_cuda=False):
+def _eval(mymodel, args, data_loader, data_set=None, RELOAD_MODEL=None, use_cuda=False):
     old_model_path = os.path.join(args.result_dir, RELOAD_MODEL)
     if RELOAD_MODEL is not None and os.path.exists(old_model_path):
         mymodel.load_model(old_model_path)
@@ -224,7 +232,6 @@ def main():
 
     ##获取数据集
     dataset = AutoKGDataset(args.dataset_dir)  
-
     # show_metadata(dataset.metadata_)
 
     LOGGER.info('===== Load metadata')
@@ -233,39 +240,41 @@ def main():
     args.time_budget = metadata.get('time_budget', args.time_budget)
     LOGGER.info(f'Time budget: {args.time_budget}')
 
-    data_loader = KGDataLoader(dataset, rebuild=False, temp_dir=args.result_dir)
+    # data_loader = KGDataLoader(dataset, rebuild=False, temp_dir=args.result_dir) ##For model REL_BLSTM_CRF
+    # data_loader = KGDataLoader2(dataset, rebuild=False, temp_dir=args.result_dir)
+    data_loader = KGDataLoader3(dataset, rebuild=False, temp_dir=args.result_dir)   ##For model BERT_Hierarchical
+
     # show_dict_info(data_loader)
     # print(data_loader.entity_type_dict)
+    # print(list(data_loader.rel_seq_map_dict))
 
     ## Reload model
     model_params = {
         # 'embedding_dim' : 768,
         # 'hidden_dim' : 64,       
         'n_ent_tags' : len(data_loader.ent_seq_map_dict),  
-        'n_rel_tags' : len(data_loader.rel_seq_map_dict),  
-        'n_rels' : len(data_loader.label_location_dict)+1,
+        # 'n_rel_tags' : len(data_loader.rel_seq_map_dict),  TODO:
+        'n_rels' : len(data_loader.relation_type_dict),
         'n_words' : len(data_loader.character_location_dict),
-        'start_ent_idx': data_loader.ent_seq_map_dict[data_loader.START_TAG],  ## <start> tag index for entity tag seq
-        'end_ent_idx': data_loader.ent_seq_map_dict[data_loader.END_TAG],  ## <end> tag index for entity tag seq
-        'start_rel_idx': data_loader.rel_seq_map_dict[data_loader.START_TAG],  ## <start> tag index for relation tag seq
-        'end_rel_idx': data_loader.rel_seq_map_dict[data_loader.END_TAG],  ## <end> tag index for relation tag seq
+        # 'start_ent_idx': data_loader.ent_seq_map_dict[data_loader.START_TAG],  ## <start> tag index for entity tag seq
+        # 'end_ent_idx': data_loader.ent_seq_map_dict[data_loader.END_TAG],  ## <end> tag index for entity tag seq
+        # 'start_rel_idx': data_loader.rel_seq_map_dict[data_loader.START_TAG],  ## <start> tag index for relation tag seq
+        # 'end_rel_idx': data_loader.rel_seq_map_dict[data_loader.END_TAG],  ## <end> tag index for relation tag seq
         'use_cuda':args.use_cuda,
         'dropout_prob': 0,
-        'lstm_layer_num': 1  ##TODO:
-        # 'num_labels': len(data_loader.ent_seq_map_dict)
+        'lstm_layer_num': 1  
     }
-    ##TODO:
-    # mymodel = BLSTM_CRF(model_params, show_param=True)   
-    # mymodel = BERT_LSTM_CRF(model_params, show_param=True) 
-    # mymodel = BERT_MLP(model_params, show_param=True)
-    mymodel = BERT_NER(model_params, show_param=True)
-    # mymodel = BERT_CRF(model_params, show_param=True)
-    
+    ##TODO:   
+    ##!!! need KGDataLoader3
+    mymodel = BERT_Hierarchical(model_params, show_param=True)  
 
+    ##!!! need KGDataLoader2
+    # mymodel = BERT_NER(model_params, show_param=True)
     # mymodel = BERT_CRF2(model_params, show_param=True)
     # mymodel = BERT_LSTM_CRF2(model_params, show_param=True)
     # mymodel = BASELINE(model_params, show_param=True)
 
+    ##!!! need KGDataLoader
     # mymodel = REL_BLSTM_CRF(model_params, show_param=True)
 
     if args.use_cuda:
@@ -282,6 +291,7 @@ def main():
     )
     test_dataset_final = dataset.check_repeat_sentence(test_dataset_final)  ## remove the repeat sentences
 
+    
     if args.mode == 'train':
         LOGGER.info('===== Start Train')
         _train(mymodel, args, data_loader, train_dataset=train_dataset, eval_dataset=eval_dataset, RELOAD_MODEL='model_test.p', use_cuda=args.use_cuda)
@@ -297,6 +307,7 @@ def main():
         LOGGER.info('===== Start Predict')
         _predict(mymodel, args, data_loader, data_set=test_dataset, RELOAD_MODEL='model_test.p', use_cuda=args.use_cuda)
     
+
     # root_dir = _here(os.pardir)
     # solution_path = os.path.join(root_dir, 's1/test.solution')
     # test_dataset = dataset._read_dataset(solution_path)

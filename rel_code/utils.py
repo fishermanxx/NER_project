@@ -63,6 +63,7 @@ def show_dict_info(dataloader):
     print('===================info about the data======================')
     print('entity type dict length:', len(dataloader.embedding_info_dicts['entity_type_dict']))
     print('entity seq dict length:', len(dataloader.embedding_info_dicts['ent_seq_map_dict']))
+    print('relation type dict length:', len(dataloader.embedding_info_dicts['relation_type_dict']))  ##TODO: change
     print('relation seq dict length:', len(dataloader.embedding_info_dicts['rel_seq_map_dict']))
     print('character location dict length:', len(dataloader.embedding_info_dicts['character_location_dict']))
     print('pos location dict length:', len(dataloader.embedding_info_dicts['pos_location_dict']))
@@ -169,7 +170,7 @@ class KGDataLoader(BaseLoader):
         self.dataset = dataset
         self.temp_dir = temp_dir
         self.metadata_ = dataset.metadata_
-        self.sentence_max_len = max(200, min(self.metadata_['avg_sen_len'], 200))  ##TODO:
+        self.sentence_max_len = max(100, min(self.metadata_['avg_sen_len'], 100))  ##TODO:
         
         self.joint_embedding_info_dicts_path = os.path.join(temp_dir, "joint_embedding_info_dict.pkl")
         if (not rebuild) and os.path.exists(self.joint_embedding_info_dicts_path):
@@ -194,8 +195,8 @@ class KGDataLoader(BaseLoader):
         self.pos_location_dict = self.embedding_info_dicts['pos_location_dict']  ## 词性序列字典
         self.inverse_pos_location_dict = self._inverse_dict(self.pos_location_dict)
 
-        self.label_location_dict = self.embedding_info_dicts['label_location_dict']  ## 关系类型字典
-        self.inverse_label_location_dict = self._inverse_dict(self.label_location_dict)
+        self.relation_type_dict = self.embedding_info_dicts['relation_type_dict']  ## 关系类型字典
+        self.inverse_relation_type_dict = self._inverse_dict(self.relation_type_dict)
 
     def _preprocess_data(self, data):
         '''
@@ -215,7 +216,7 @@ class KGDataLoader(BaseLoader):
             @embedding_info_dicts: dict
                 -embedding_info_dicts['character_location_dict']: ## 字符层面字典 - {"北":1, "京":2}
                 -embedding_info_dicts['pos_location_dict']: ## POS字典 - {"b":1, "ag":2}
-                -embedding_info_dicts['label_location_dict']:  ## 关系字典 - {'rel1': 1, 'rel2': 2}
+                -embedding_info_dicts['relation_type_dict']:  ## 关系字典 - {'rel1': 1, 'rel2': 2}
                 -embedding_info_dicts['ent_seq_map_dict']: ##实体序列字典 - {"B_0":1, "I_0": 2, "E_0", 3, "B_1":4}
                 -embedding_info_dicts['rel_seq_map_dict']:
                 -embedding_info_dicts['entity_type_dict']: ##实体类别编号字典 - {"Time": 0, "Number": 1, "书籍": 2}
@@ -275,15 +276,15 @@ class KGDataLoader(BaseLoader):
         rel_seq_map_dict[self.START_TAG] = len(rel_seq_map_dict)
         rel_seq_map_dict[self.END_TAG] = len(rel_seq_map_dict)
 
-        ## label_location_dict  (relation_type_dict)
+        ## (relation_type_dict)
         label_set = self.dataset.metadata_['relation_set']
-        label_location_dict = self._generate_word_dict(label_set)
-        label_location_dict.pop(self.PAD_TAG)
+        relation_type_dict = self._generate_word_dict(label_set)
+        relation_type_dict.pop(self.PAD_TAG)
 
         embedding_info_dicts = {
             "character_location_dict": character_location_dict,   ## 字符层面字典 - {"北":1, "京":2}
             "pos_location_dict": pos_location_dict,   ## POS字典 - {"b":1, "ag":2}
-            "label_location_dict": label_location_dict,  ## 关系字典 - {'rel1': 1, 'rel2': 2}
+            "relation_type_dict": relation_type_dict,  ## 关系字典 - {'rel1': 1, 'rel2': 2}
             "ent_seq_map_dict": ent_seq_map_dict,  ##实体序列字典 - {"B_0":1, "I_0": 2, "E_0", 3, "B_1":4}
             "rel_seq_map_dict": rel_seq_map_dict,  ##关系序列字典 - 
             "entity_type_dict": entity_type_dict  ##实体类别编号字典 - {"Time": 0, "Number": 1, "书籍": 2}
@@ -312,7 +313,7 @@ class KGDataLoader(BaseLoader):
                 (test-0)return_dict['y_rel_matrix']: ##(N, T), np.array, 关系抽取编码序列  len = self.sentence_max_len
                 return_dict['pos_matrix']: ##(N, T), np.array, POS编码序列  len = self.sentence_max_len
                 return_dict['sentence_length']: ##(N), list, 句子长度序列
-                return_dict['relation_type_list']: ##(N), list, 每一个训练case的relation_type, 对应label_location_dict
+                return_dict['relation_type_list']: ##(N), list, 每一个训练case的relation_type, 对应relation_type_dict
                 return_dict['data_list']: ##(N), list 原始数据序列 - 增加postag信息
         '''
         if data_type == None:
@@ -432,18 +433,18 @@ class KGDataLoader(BaseLoader):
                 (test-0)return_dict['y_rel_matrix']: ##(N, T), np.array, 关系抽取编码序列  len = self.sentence_max_len
                 return_dict['pos_matrix']: ##(N, T), np.array, POS编码序列  len = self.sentence_max_len
                 return_dict['sentence_length']: ##(N), list, 句子长度序列
-                return_dict['relation_type_list']: ##(N), list, 每一个训练case的relation_type, 对应label_location_dict
+                return_dict['relation_type_list']: ##(N), list, 每一个训练case的relation_type, 对应relation_type_dict
                 return_dict['data_list']: ##(N), list 原始数据序列 - 增加postag信息
         '''
         character_location_dict = self.character_location_dict
         pos_location_dict = self.pos_location_dict
-        label_location_dict = self.label_location_dict
+        relation_type_dict = self.relation_type_dict
         sentence_max_len = self.sentence_max_len
 
         char_matrix_list = []   ## 1. 字符编码序列
         sentence_length_list = []  ##2. 句子长度序列
         pos_matrix_list = []  ## 3. POS编码序列
-        relation_type_list = []  ## 4.  一个list，记录每个case的关系类型,即relation_type，通过label_location_dict来一一对应
+        relation_type_list = []  ## 4.  一个list，记录每个case的关系类型,即relation_type，通过relation_type_dict来一一对应
         y_rel_matrix_list = []  ## 5. 关系抽取编码序列, 记录每个case的两个主体(OBJ, SUB)的位置， 如 001111100022222000
         data_list = []  ## 6. 原始数据序列 - 增加postag信息
 
@@ -487,7 +488,7 @@ class KGDataLoader(BaseLoader):
                     relation = relation_item['relation']
                     spo_dict[relation].append(relation_item)   ###字典里面每个relation类别对应一个list, list中全部都是这个relation的case(仅仅是这一个句子里面的case)
                 ## 针对每一个case按照每一个relation_type来分别构造一个关系标注序列，即一个句子如果有2个relation_type，那么最终等价于产生两笔data
-                for relation in label_location_dict.keys():
+                for relation in relation_type_dict.keys():
                     y_rel_list = np.zeros([sentence_max_len])   ###针对每个句子中的每个relation_type都有一个y_rel_list
                     if relation in spo_dict.keys():
                         for item in spo_dict[relation]:
@@ -511,17 +512,17 @@ class KGDataLoader(BaseLoader):
                     char_matrix_list.append(char_list)  ##test: sentence info
                     pos_matrix_list.append(pos_list)  ##test: sentence info
                     sentence_length_list.append(sentence_length)  ##test: sentence info
-                    relation_type_list.append(label_location_dict[relation])  ##
+                    relation_type_list.append(relation_type_dict[relation])  ##
                     data_list.append(d)  ##test: 只有input, 以及tag的信息
 
             else:
                 y_rel_list = np.zeros([sentence_max_len])
-                for relation, relation_type in label_location_dict.items():
+                for relation, relation_type in relation_type_dict.items():
                     y_rel_matrix_list.append(y_rel_list)  ##test: all_zero
                     char_matrix_list.append(char_list)  ##test: sentence info
                     pos_matrix_list.append(pos_list)  ##test: sentence info
                     sentence_length_list.append(sentence_length)  ##test: sentence info
-                    relation_type_list.append(label_location_dict[relation])  ##
+                    relation_type_list.append(relation_type_dict[relation])  ##
                     data_list.append(d)  ##test: 只有input, 以及tag的信息
 
             if (row_idx % 300 == 0):
@@ -592,7 +593,7 @@ class KGDataLoader(BaseLoader):
             if data_type == 'ent_rel' or data_type == 'rel':
                 ## 对关系抽取的处理
                 y_rel = result['y_rel_matrix'][idx]
-                relation = self.inverse_label_location_dict[result['relation_type_list'][idx]]
+                relation = self.inverse_relation_type_dict[result['relation_type_list'][idx]]
                 sub_list = self._obtain_sub_obj(y_rel, sentence, entity_type='sub')
                 obj_list = self._obtain_sub_obj(y_rel, sentence, entity_type='obj')
 
@@ -795,7 +796,7 @@ if __name__ == '__main__':
 
     # load_bert_pretrained_dict()
     result_dir = './result/'
-    data_set = AutoKGDataset('./d1/')
+    data_set = AutoKGDataset('./data/d4/')
     train_dataset = data_set.train_dataset[:10]
 
     import os
@@ -861,14 +862,14 @@ if __name__ == '__main__':
                 print(ori_relations_str)
 
                 relation_i = relation[i][0]
-                rel_type_decode = data_loader.inverse_label_location_dict[relation_i]
+                rel_type_decode = data_loader.inverse_relation_type_dict[relation_i]
                 sub_decode = data_loader._obtain_sub_obj(y_rel[i], ori_sentence, entity_type='sub')
                 obj_decode = data_loader._obtain_sub_obj(y_rel[i], ori_sentence, entity_type='obj')
                 print('decode relations')
                 print(f"{rel_type_decode}--[{sub_decode[0]['entity']}]--[{obj_decode[0]['entity']}]")  
 
                 # relation_i = relation[i][0]
-                # rel_type_decode = data_loader.inverse_label_location_dict[relation_i]
+                # rel_type_decode = data_loader.inverse_relation_type_dict[relation_i]
                 # # print('decode relation type: ', rel_type_decode)
                 # relation_seq_i = y_rel[i, :sentence_length[i]]
                 # print('decode y_rel:')

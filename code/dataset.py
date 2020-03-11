@@ -75,7 +75,7 @@ class AutoKGDataset:
         self.all_train_dataset = self._read_dataset(
             os.path.join(self.dataset_dir_, 'train.data')
         )
-        self.train_dataset, self.dev_dataset = train_test_split(self.all_train_dataset, test_size=0.3, random_state=random_state)
+        self.train_dataset, self.dev_dataset = train_test_split(self.all_train_dataset, test_size=0.2, random_state=random_state)
         self.dev_dataset = self.check_repeat_sentence(self.dev_dataset)   ##remove the repeat sentence
 
         self.test_dataset = self._read_dataset(
@@ -121,10 +121,12 @@ class AutoKGDataset:
             sen_len += len(sample['input'])
             for c in sample['input']:
                 chars.add(c)
-            for e in sample['output']['entity_list']:
-                ens.add(e['entity_type'])
-            for r in sample['output']['relation_list']:
-                rels.add(r['relation'])
+            if self.metadata_['data_type'] == 'ent' or self.metadata_['data_type'] == 'ent_rel':
+                for e in sample['output']['entity_list']:
+                    ens.add(e['entity_type'])
+            if self.metadata_['data_type'] == 'rel' or self.metadata_['data_type'] == 'ent_rel':
+                for r in sample['output']['relation_list']:
+                    rels.add(r['relation'])
         
         self.metadata_['char_size'] = len(chars)
         self.metadata_['char_set'] = chars

@@ -5,6 +5,7 @@
 !*.md
 !*.gitignore
 !/code/
+!/rel_code/
 
 !/data/
 /data/*
