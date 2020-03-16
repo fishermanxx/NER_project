@@ -1,0 +1,43 @@
+2020-03-16 23:45:04,161 INFO train.py: ===== Start program
+2020-03-16 23:45:04,161 INFO train.py: ===== Initialize args
+2020-03-16 23:45:04,163 INFO train.py: ===== task mode: train
+2020-03-16 23:45:04,783 INFO train.py: ===== Load metadata
+2020-03-16 23:45:04,783 INFO train.py: ===== use_cuda: 1
+2020-03-16 23:45:04,783 INFO train.py: Time budget: 10000
+start to proprocessing data...
+PreProcess 0.000 
+PreProcess 0.057 
+PreProcess 0.114 
+PreProcess 0.171 
+PreProcess 0.228 
+PreProcess 0.285 
+PreProcess 0.342 
+PreProcess 0.399 
+PreProcess 0.455 
+PreProcess 0.512 
+PreProcess 0.569 
+PreProcess 0.626 
+PreProcess 0.683 
+PreProcess 0.740 
+PreProcess 0.797 
+PreProcess 0.854 
+PreProcess 0.911 
+PreProcess 0.968 
+character location dict done...
+ent seq map dict done...
+preprocessing finished, save successfully~
+===================info about the data======================
+entity type dict length: 11
+entity type: ['学校', '企业', '图书作品', 'Text', '地点', '影视作品', 'Date', '历史人物', '国家', '人物', '歌曲']
+============================================================
+
+================================================================================
+----model_type: BERT_NER
+----n_ent_tags: 34
+----use_cuda: 1
+================================================================================
+2020-03-16 23:45:17,690 INFO train.py: ===== Start Train
+2020-03-16 23:45:17,693 INFO train.py: There is no such file in /mnt/disk0/home/xuxin/mywork/code/../result/model_test.p, Rebuild model
+use cuda=========================
+1
+0

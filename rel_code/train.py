@@ -135,7 +135,7 @@ def _train(mymodel, args, data_loader, train_dataset=None, eval_dataset=None, RE
     if use_cuda:
         train_param = {
             'EPOCH': 10,         #45  TODO:15
-            'batch_size': 32,    #512   TODO:64
+            'batch_size': 16,    #512   TODO:64
             'learning_rate_bert': 5e-5,  
             'learning_rate_upper': 1e-3,  #TODO:1e-3
             'bert_finetune': True,

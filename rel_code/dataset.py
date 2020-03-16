@@ -75,7 +75,7 @@ class AutoKGDataset:
         self.all_train_dataset = self._read_dataset(
             os.path.join(self.dataset_dir_, 'train.data')
         )
-        self.train_dataset, self.dev_dataset = train_test_split(self.all_train_dataset, test_size=0.2, random_state=random_state)
+        self.train_dataset, self.dev_dataset = train_test_split(self.all_train_dataset, test_size=0.1, random_state=random_state)
         self.dev_dataset = self.check_repeat_sentence(self.dev_dataset)   ##remove the repeat sentence
 
         self.test_dataset = self._read_dataset(

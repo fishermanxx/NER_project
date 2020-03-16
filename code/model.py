@@ -88,6 +88,8 @@ class MODEL_TEMP(nn.Module):
         ema = EMA(self, mu=0.99) if use_ema else None
         if use_cuda:
             print('use cuda=========================')
+            # print(torch.cuda.device_count())
+            # print(torch.cuda.current_device())
             self.cuda()
 
         if use_ema:

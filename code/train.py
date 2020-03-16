@@ -126,7 +126,7 @@ def _train(mymodel, args, data_loader, train_dataset=None, eval_dataset=None, RE
     ##TODO:
     if use_cuda:
         train_param = {
-            'EPOCH': 20,         #45  TODO:15
+            'EPOCH': 10,         #45  TODO:15
             'batch_size': 16,    #512   TODO:64
             'learning_rate_bert': 5e-5,
             'learning_rate_upper': 1e-3,  #TODO:
@@ -234,7 +234,7 @@ def main():
     LOGGER.info(f'Time budget: {args.time_budget}')
 
     data_loader = KGDataLoader(dataset, rebuild=False, temp_dir=args.result_dir)
-    # show_dict_info(data_loader)
+    show_dict_info(data_loader)
     # print(data_loader.entity_type_dict)
 
     ## Reload model

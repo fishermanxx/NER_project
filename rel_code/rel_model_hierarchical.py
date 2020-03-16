@@ -26,7 +26,7 @@ import time
 # from model import MODEL_TEMP
 
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '7'
+# os.environ['CUDA_VISIBLE_DEVICES'] = '4'
 seed = 1
 torch.manual_seed(seed)
 np.random.seed(seed)
@@ -795,9 +795,9 @@ if __name__ == '__main__':
     ###===========================================================
     ###试训练
     ###===========================================================
-    data_set = AutoKGDataset('./data/d2/')
-    train_dataset = data_set.train_dataset[74100:74190]
-    eval_dataset = data_set.dev_dataset[:10]
+    data_set = AutoKGDataset('./data/d4/')
+    train_dataset = data_set.train_dataset
+    eval_dataset = data_set.dev_dataset
     # train_dataset = data_set.train_dataset
     # eval_dataset = data_set.dev_dataset
 
@@ -807,18 +807,18 @@ if __name__ == '__main__':
     model_config = {
         'embedding_dim' : 768,
         'n_rels': len(data_loader.relation_type_dict),
-        'use_cuda':0,
+        'use_cuda':1,
         'dropout_prob': 0,
     }
     mymodel = BERT_Hierarchical(model_config, show_param=True)
 
     train_param = {
         'EPOCH': 1,         
-        'batch_size': 4,    
+        'batch_size': 16,    
         'learning_rate_bert': 5e-5,
         'learning_rate_upper': 1e-3, 
         'bert_finetune': True,
-        'visualize_length': 2,
+        'visualize_length': 20,
         'isshuffle': True,
         'result_dir': './result',
         'model_name':'model_test.p'

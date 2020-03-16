@@ -62,10 +62,11 @@ def show_dict_info(dataloader):
     '''
     print('===================info about the data======================')
     print('entity type dict length:', len(dataloader.embedding_info_dicts['entity_type_dict']))
-    print('entity seq dict length:', len(dataloader.embedding_info_dicts['ent_seq_map_dict']))
-    print('relation seq dict length:', len(dataloader.embedding_info_dicts['rel_seq_map_dict']))
-    print('character location dict length:', len(dataloader.embedding_info_dicts['character_location_dict']))
-    print('pos location dict length:', len(dataloader.embedding_info_dicts['pos_location_dict']))
+    print('entity type:', list(dataloader.embedding_info_dicts['entity_type_dict']))
+    # print('entity seq dict length:', len(dataloader.embedding_info_dicts['ent_seq_map_dict']))
+    # print('relation seq dict length:', len(dataloader.embedding_info_dicts['rel_seq_map_dict']))
+    # print('character location dict length:', len(dataloader.embedding_info_dicts['character_location_dict']))
+    # print('pos location dict length:', len(dataloader.embedding_info_dicts['pos_location_dict']))
     print('============================================================')
     print()
 
@@ -169,7 +170,7 @@ class KGDataLoader(BaseLoader):
         self.dataset = dataset
         self.temp_dir = temp_dir
         self.metadata_ = dataset.metadata_
-        self.sentence_max_len = max(200, min(self.metadata_['avg_sen_len'], 200))  ##TODO:
+        self.sentence_max_len = max(300, min(self.metadata_['avg_sen_len'], 300))  ##TODO:
         
         self.joint_embedding_info_dicts_path = os.path.join(temp_dir, "joint_embedding_info_dict.pkl")
         if (not rebuild) and os.path.exists(self.joint_embedding_info_dicts_path):
@@ -229,9 +230,10 @@ class KGDataLoader(BaseLoader):
 
         # 将所有句子按照word以及char进行分离
         for cnt, item in enumerate(data):
-            tokens, poss = self._tokenizer(item['input'])
-            tokenized_lists.append(tokens)  
-            pos_lists.append(poss)
+            ##TODO: not used pos information
+            # tokens, poss = self._tokenizer(item['input'])
+            # tokenized_lists.append(tokens)  
+            # pos_lists.append(poss)
             character_lists.append(list(item['input']))
             if cnt % 300 == 0:
                 log("PreProcess %.3f \r" % (cnt / len(data)))
@@ -241,10 +243,11 @@ class KGDataLoader(BaseLoader):
         character_location_dict = self._generate_word_dict(character_set)
         print('character location dict done...')
 
-        #pos_location_dict
-        pos_set = self._get_size_word_set(pos_lists, size=None)   ### 关于pos的一个set, 是在token层面，即词汇层面--“北京”
-        pos_location_dict = self._generate_word_dict(pos_set)
-        print('pos location dict done...')
+        ###pos_location_dict TODO: not used
+        pos_location_dict = {}
+        # pos_set = self._get_size_word_set(pos_lists, size=None)   ### 关于pos的一个set, 是在token层面，即词汇层面--“北京”
+        # pos_location_dict = self._generate_word_dict(pos_set)
+        # print('pos location dict done...')
 
         #entity_type_dict, ent_seq_map_dict
         ent_seq_map_dict = {'ELSE': 0}
@@ -351,12 +354,13 @@ class KGDataLoader(BaseLoader):
 
         for row_idx, d in enumerate(data):
             input_text = d['input']   ## sentence
-            tokens, poss = self._tokenizer(input_text)  ##分词，获取词性
 
-            postag = []
-            for token, pos in zip(tokens, poss):
-                postag.append({'word': token, 'pos': pos})
-            d['postag'] = postag
+            ##TODO: not used
+            # tokens, poss = self._tokenizer(input_text)  ##分词，获取词性
+            # postag = []
+            # for token, pos in zip(tokens, poss):
+            #     postag.append({'word': token, 'pos': pos})
+            # d['postag'] = postag
 
             ##获取文本的字符序列 --- char_list, sentence_length_list
             sentence_length = 0
@@ -369,16 +373,17 @@ class KGDataLoader(BaseLoader):
                         char_list[col_idx] = character_location_dict[self.UNK_TAG]
                     sentence_length += 1
 
-            ##获取文本的词性序列 --- pos_list
-            pos_list = np.zeros((sentence_max_len))
-            last_word_loc = 0
-            for item in d['postag']:
-                word = item['word']
-                pos = item['pos']
-                word_start = input_text.find(word, last_word_loc)
-                word_len = len(word)
-                pos_list[word_start:min(word_start+word_len, sentence_max_len)] = pos_location_dict[pos]
-                last_word_loc = word_start + word_len
+            ##获取文本的词性序列 --- pos_list TODO: not used
+            pos_list = []
+            # pos_list = np.zeros((sentence_max_len))
+            # last_word_loc = 0
+            # for item in d['postag']:
+            #     word = item['word']
+            #     pos = item['pos']
+            #     word_start = input_text.find(word, last_word_loc)
+            #     word_len = len(word)
+            #     pos_list[word_start:min(word_start+word_len, sentence_max_len)] = pos_location_dict[pos]
+            #     last_word_loc = word_start + word_len
 
             ##构造实体标注序列 --- y_ent_list
             y_ent_list = np.zeros([sentence_max_len])
@@ -450,11 +455,13 @@ class KGDataLoader(BaseLoader):
         for row_idx, d in enumerate(data):
 
             input_text = d['input']   ## sentence
-            tokens, poss = self._tokenizer(input_text)  ##分词，获取词性
-            postag = []
-            for token, pos in zip(tokens, poss):
-                postag.append({'word': token, 'pos': pos})
-            d['postag'] = postag
+
+            ##TODO: not used
+            # tokens, poss = self._tokenizer(input_text)  ##分词，获取词性
+            # postag = []
+            # for token, pos in zip(tokens, poss):
+            #     postag.append({'word': token, 'pos': pos})
+            # d['postag'] = postag
 
             ##获取文本的字符序列 --- 1. char_list， 2. sentence_length_list
             sentence_length = 0
@@ -467,16 +474,17 @@ class KGDataLoader(BaseLoader):
                         char_list[col_idx] = character_location_dict[self.UNK_TAG]
                     sentence_length += 1
 
-            ##获取文本的词性序列 --- 3. pos_list
-            pos_list = np.zeros((sentence_max_len))
-            last_word_loc = 0
-            for item in d['postag']:
-                word = item['word']
-                pos = item['pos']
-                word_start = input_text.find(word, last_word_loc)
-                word_len = len(word)
-                pos_list[word_start:min(word_start+word_len, sentence_max_len)] = pos_location_dict[pos]
-                last_word_loc = word_start + word_len
+            ##获取文本的词性序列 --- 3. pos_list TODO: not used
+            pos_list = []
+            # pos_list = np.zeros((sentence_max_len))
+            # last_word_loc = 0
+            # for item in d['postag']:
+            #     word = item['word']
+            #     pos = item['pos']
+            #     word_start = input_text.find(word, last_word_loc)
+            #     word_len = len(word)
+            #     pos_list[word_start:min(word_start+word_len, sentence_max_len)] = pos_location_dict[pos]
+            #     last_word_loc = word_start + word_len
 
             ##关系抽取标注序列 --- 4, relation_type_list, 5. y_rel_list
             # y_ent_list = np.zeros([sentence_max_len])
