@@ -12,7 +12,7 @@ from transformers import BertForTokenClassification, BertTokenizer
 # from torch.optim.lr_scheduler import LambdaLR
 
 import os
-# os.environ['CUDA_VISIBLE_DEVICES'] = '5,6'
+# os.environ['CUDA_VISIBLE_DEVICES'] = '4'
 
 from model import MODEL_TEMP
 
@@ -128,7 +128,7 @@ if __name__ == '__main__':
     ###===========================================================
     ###试训练
     ###===========================================================
-    data_set = AutoKGDataset('./data/newdata/d11/')
+    data_set = AutoKGDataset('./data/d4/')
     # train_dataset = data_set.train_dataset[:20]
     # eval_dataset = data_set.dev_dataset[:10]
     train_dataset = data_set.train_dataset
@@ -167,7 +167,7 @@ if __name__ == '__main__':
         'result_dir': './result/'
     }
     mymodel = BERT_NER(model_params, show_param=True)
-    # mymodel.train_model(data_loader, hyper_param=train_param, train_dataset=train_dataset, eval_dataset=eval_dataset)
+    mymodel.train_model(data_loader, hyper_param=train_param, train_dataset=train_dataset, eval_dataset=eval_dataset)
 
     hyper_param = {
         'batch_size': 100,

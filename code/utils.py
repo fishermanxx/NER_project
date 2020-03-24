@@ -170,7 +170,7 @@ class KGDataLoader(BaseLoader):
         self.dataset = dataset
         self.temp_dir = temp_dir
         self.metadata_ = dataset.metadata_
-        self.sentence_max_len = max(300, min(self.metadata_['avg_sen_len'], 300))  ##TODO:
+        self.sentence_max_len = max(200, min(self.metadata_['avg_sen_len'], 200))  ##TODO:
         
         self.joint_embedding_info_dicts_path = os.path.join(temp_dir, "joint_embedding_info_dict.pkl")
         if (not rebuild) and os.path.exists(self.joint_embedding_info_dicts_path):

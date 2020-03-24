@@ -26,7 +26,7 @@ import time
 # from model import MODEL_TEMP
 
 
-# os.environ['CUDA_VISIBLE_DEVICES'] = '4'
+os.environ['CUDA_VISIBLE_DEVICES'] = '4'
 seed = 1
 torch.manual_seed(seed)
 np.random.seed(seed)
@@ -124,7 +124,7 @@ class BERT_Hierarchical(nn.Module):
         self.embed2obj = nn.Linear(self.embedding_dim, 2*self.n_rels)
         # self.loss_fn = nn.BCELoss(reduction='none')
 
-        weight = torch.tensor([1, 1]).float()
+        weight = torch.tensor([1, 10]).float()  ###(0:weight, 1: weight)   ##TODO:
         self.loss_fn = FocalLoss(alpha=weight, gamma=0, size_average=False)
 
     def reset_parameters(self):        
@@ -309,7 +309,14 @@ class BERT_Hierarchical(nn.Module):
 
             objr_list = self._convert_relation_back(obj_pred_int, lens)
             if len(objr_list) > 0:
-                spoes[sub_i] = objr_list
+                # spoes[sub_i] = objr_list
+
+                ##删除主语和宾语相同的情况(TODO:)
+                new_objr_list = [objr for objr in objr_list if objr[0] != sub_i[0]]
+                # for objr in objr_list:
+                #     if objr[0] != sub_i[0]:
+                #         new_objr_list.append(objr)
+                spoes[sub_i] = new_objr_list
             
         return [spoes]
 
@@ -520,7 +527,7 @@ class BERT_Hierarchical(nn.Module):
         total_pre_rel = []
         for cnt, data_batch in enumerate(data_generator):
             x, pos, _, _, lens, data_list = data_batch
-            pre_rel = self._output(x, lens, threshold=0.5)
+            pre_rel = self._output(x, lens, threshold=0.6)  ##TODO:
             total_pre_rel += pre_rel
 
             if (cnt+1) % 200 == 0:
@@ -795,7 +802,7 @@ if __name__ == '__main__':
     ###===========================================================
     ###试训练
     ###===========================================================
-    data_set = AutoKGDataset('./data/d4/')
+    data_set = AutoKGDataset('./data/newdata2/d10')
     train_dataset = data_set.train_dataset
     eval_dataset = data_set.dev_dataset
     # train_dataset = data_set.train_dataset
@@ -813,7 +820,7 @@ if __name__ == '__main__':
     mymodel = BERT_Hierarchical(model_config, show_param=True)
 
     train_param = {
-        'EPOCH': 1,         
+        'EPOCH': 0,         
         'batch_size': 16,    
         'learning_rate_bert': 5e-5,
         'learning_rate_upper': 1e-3, 
@@ -825,12 +832,12 @@ if __name__ == '__main__':
     }
     mymodel.train_model(data_loader, train_dataset, eval_dataset, train_param)
 
-    # eval_param = {        
-    #     'batch_size': 1,    
-    #     'issave': True,
-    #     'result_dir': './result'
-    # }
-    # mymodel.predict(data_loader, eval_dataset, eval_param, rebuild=False)
+    eval_param = {        
+        'batch_size': 1,    
+        'issave': True,
+        'result_dir': './result'
+    }
+    mymodel.predict(data_loader, eval_dataset, eval_param, rebuild=False)
 
     ###===========================================================
     ###试训练 -- 参数细节

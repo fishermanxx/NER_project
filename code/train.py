@@ -24,6 +24,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import argparse
 
+
+os.environ['CUDA_DEVICE_ORDER'] = "PCI_BUS_ID"
+os.environ['CUDA_VISIBLE_DEVICES'] = '7'
+
+
 CPU_TRAIN = 20
 CPU_EVAL = 10
 CPU_EPOCH = 3
@@ -49,8 +54,8 @@ def _parse_args():
         @args.task
     '''
     root_dir = _here(os.pardir)  ##总目录
-    default_dataset_dir = os.path.join(root_dir, 'data/d1')
-    default_answer_dir = os.path.join(root_dir, 'data/s1')
+    default_dataset_dir = os.path.join(root_dir, 'data/d4')
+    default_answer_dir = os.path.join(root_dir, 'data/s4')
     default_code_dir = os.path.join(root_dir, 'code')
     default_result_dir = os.path.join(root_dir, 'result')
 
@@ -83,7 +88,7 @@ def _parse_args():
                         help="Default task name - baidu")
 
     parser.add_argument('--use_cuda', type=int,
-                        default=0,
+                        default=1,
                         help="whether to use cuda - defualt False")
     
     parser.add_argument('--mode', type=str,
@@ -127,7 +132,7 @@ def _train(mymodel, args, data_loader, train_dataset=None, eval_dataset=None, RE
     if use_cuda:
         train_param = {
             'EPOCH': 10,         #45  TODO:15
-            'batch_size': 16,    #512   TODO:64
+            'batch_size': 8,    #512   TODO:64
             'learning_rate_bert': 5e-5,
             'learning_rate_upper': 1e-3,  #TODO:
             'bert_finetune': True,

@@ -162,12 +162,15 @@ class AutoKGDataset:
     def check_repeat_sentence(dataset):
         new_dataset = []
         seen_sentence = set()
+        cnt = 0
         for item in dataset:
             if item['input'] in seen_sentence:
-                print(f"remove repeat sentence: {item['input']}")
+                # print(f"remove repeat sentence: {item['input']}")
+                cnt += 1
                 continue
             seen_sentence.add(item['input'])
             new_dataset.append(item)
+        print(f'remove repeat sentence {cnt}')
         return new_dataset
 
 
