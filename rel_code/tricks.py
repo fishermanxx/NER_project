@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+import copy
 
 class EMA():
     def __init__(self, model, mu=0.999):
@@ -7,6 +8,7 @@ class EMA():
         self.mu = mu
         self.shadow = {}
         self.backup = {}
+        self.old_ema = {}
 
     def register(self):
         for name, param in self.model.named_parameters():
@@ -34,18 +36,26 @@ class EMA():
                 param.data = self.backup[name]
         self.backup = {}
 
+    def backup_oldema(self):
+        self.old_ema = copy.deepcopy(self.shadow)
+
+    def return_oldema(self):
+        self.shadow = copy.deepcopy(self.old_ema)
 
 class FocalLoss(nn.Module):
     def __init__(self, alpha=None, gamma=2, size_average=False):
         super(FocalLoss, self).__init__()
         if alpha is None:
-            self.alpha = torch.ones(2).requires_grad_()
+            # self.alpha = torch.ones(2).requires_grad_()
+            self.alpha = torch.ones(2, requires_grad=False)
         else:
             assert alpha.shape == (2,), 'this is for sigmoid, alpha dim must be (2,)'
             if alpha.requires_grad:
-                self.alpah = alpha
+                alpha.requires_grad=False
+                self.alpah = alpha.float()
             else:
-                self.alpha = alpha.float().requires_grad_()
+                # self.alpha = alpha.float().requires_grad_()
+                self.alpha = alpha.float()
         
         self.gamma = gamma
         self.class_num = 2

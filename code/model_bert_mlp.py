@@ -10,11 +10,8 @@ from torch import nn
 import torch.nn.init as I
 from torch.autograd import Variable
 
-# from utils import my_lr_lambda
-# from torch.optim.lr_scheduler import LambdaLR
-
 import os
-os.environ['CUDA_VISIBLE_DEVICES'] = '7'
+# os.environ['CUDA_VISIBLE_DEVICES'] = '7'
 
 from model import MODEL_TEMP
 torch.manual_seed(1)
@@ -23,23 +20,14 @@ class BERT_MLP(MODEL_TEMP):
     def __init__(self, config={}, show_param=False):
         '''
         :param - dict
-            param['embedding_dim']
-            param['hidden_dim']
             param['n_ent_tags']
-            param['n_rel_tags']
-            param['n_words']
-            param['start_ent_idx']  int, <start> tag index for entity tag seq
-            param['end_ent_idx']   int, <end> tag index for entity tag seq
-            param['start_rel_idx']
-            param['end_rel_idx']
             param['use_cuda']
             param['dropout_prob']
-            param['lstm_layer_num']
         '''
         super(BERT_MLP, self).__init__()
         self.config = config
         self.embedding_dim = self.config.get('embedding_dim', 768)
-        self.n_tags = self.config.get('n_ent_tags', 45)
+        self.n_tags = self.config['n_ent_tags'] - 2
         self.use_cuda = self.config.get('use_cuda', False)
         self.model_type = 'BERT_MLP'
 
@@ -117,34 +105,12 @@ class BERT_MLP(MODEL_TEMP):
         return paths
 
 
-
 if __name__ == '__main__':
     model_config = {
         'num_labels':45,
         'use_cuda':True   #True
     }
     mymodel = BERT_MLP(config=model_config)
-
-    ###===========================================================
-    ###模型参数测试
-    ###===========================================================
-    ##case1:
-    all_param = list(mymodel.named_parameters()) 
-    bert_param = [(n, p) for n, p in all_param if 'bert' in n]
-    other_param = [(n, p) for n, p in all_param if 'bert' not in n]
-    print(f'all_param: {len(all_param)}')
-    print(f'bert_param: {len(bert_param)}')
-    print(f'other_param: {len(other_param)}')
-    for n, p in other_param:
-        print(n, p.shape)
-
-    ##case2:
-    cls_param = list(mymodel.hidden2tag.named_parameters())
-    bert_param = list(mymodel.bert.named_parameters())
-    print(f'bert_param: {len(bert_param)}')
-    print(f'cls_param: {len(cls_param)}')
-    for n, p in cls_param:
-        print(n, p.shape)
 
     ###===========================================================
     ###试训练
@@ -179,11 +145,11 @@ if __name__ == '__main__':
     # model.eval_model(data_loader, data_set=eval_dataset, hyper_param=predict_param)
 
 
+    ###===========================================================
+    ###试训练 -- detail
+    ###===========================================================
     # train_data_mat_dict = data_loader.transform(train_dataset)
-
     # data_generator = Batch_Generator(train_data_mat_dict, batch_size=4, data_type='ent', isshuffle=True)
-
-
 
     # for epoch in range(EPOCH):
     #     print('EPOCH: %d' % epoch)

@@ -2,18 +2,17 @@ from dataset import AutoKGDataset
 from utils import KGDataLoader, Batch_Generator
 from utils import show_metadata, show_dict_info
 
+# from model_lstm_crf import BLSTM_CRF
+# from model_bert_crf import BERT_CRF
+# from model_bert_lstm_crf import BERT_LSTM_CRF
 
-from model_lstm_crf import BLSTM_CRF
-from model_bert_lstm_crf import BERT_LSTM_CRF
+from model_lstm_crf_baseline import BASELINE
 from model_bert_mlp import BERT_MLP
 from model_bert_mlp2 import BERT_NER
-from model_bert_crf import BERT_CRF
-
 from model_bert_crf2 import BERT_CRF2
 from model_bert_lstm_crf2 import BERT_LSTM_CRF2
-from model_lstm_crf_baseline import BASELINE
 
-from rel_model_lstm_crf import REL_BLSTM_CRF
+# from rel_model_lstm_crf import REL_BLSTM_CRF  ##TODO:
 
 from common import get_logger, Timer
 
@@ -23,7 +22,6 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 import argparse
-
 
 os.environ['CUDA_DEVICE_ORDER'] = "PCI_BUS_ID"
 os.environ['CUDA_VISIBLE_DEVICES'] = '7'
@@ -114,7 +112,6 @@ def plot_img(arr, filename='img.png'):
     n = arr.shape[0]
     for i in range(n):
         plt.plot(arr[i])
-    # loss_img_path = os.path.join(args.result_dir, 'loss_all.png')
     plt.savefig(filename)
 
 def _train(mymodel, args, data_loader, train_dataset=None, eval_dataset=None, RELOAD_MODEL=None, use_cuda=False):
@@ -131,8 +128,8 @@ def _train(mymodel, args, data_loader, train_dataset=None, eval_dataset=None, RE
     ##TODO:
     if use_cuda:
         train_param = {
-            'EPOCH': 10,         #45  TODO:15
-            'batch_size': 8,    #512   TODO:64
+            'EPOCH': 15,         #45  TODO:15
+            'batch_size': 32,    #512   TODO:64
             'learning_rate_bert': 5e-5,
             'learning_rate_upper': 1e-3,  #TODO:
             'bert_finetune': True,
@@ -141,13 +138,12 @@ def _train(mymodel, args, data_loader, train_dataset=None, eval_dataset=None, RE
             'result_dir': args.result_dir,
             'model_name':'model_test.p'
         }
-
     else:
         train_param = {
             'EPOCH': CPU_EPOCH,         #45
             'batch_size': CPU_BATCHSIZE,    #512
             'learning_rate_bert': 5e-5,
-            'learning_rate_upper': 5e-3,
+            'learning_rate_upper': 1e-3,
             'bert_finetune': False,
             'visualize_length': CPU_VISUAL, #10
             'isshuffle': True,
@@ -159,8 +155,6 @@ def _train(mymodel, args, data_loader, train_dataset=None, eval_dataset=None, RE
     timer.set(args.time_budget)
     loss_record = None
     with timer.time_limit('training'):
-        # loss_record, score_record = mymodel.train_model(data_loader, train_dataset, eval_dataset, hyper_param, use_cuda=use_cuda)
-        # loss_record, score_record = mymodel.train_model(data_loader, train_dataset, eval_dataset, hyper_param)
         loss_record, score_record = mymodel.train_model(data_loader, hyper_param=train_param, train_dataset=train_dataset, eval_dataset=eval_dataset)
 
     loss_record = np.array(loss_record)
@@ -198,7 +192,7 @@ def _predict(mymodel, args, data_loader, data_set=None, RELOAD_MODEL=None, use_c
     with timer.time_limit('predict'):
         mymodel.predict(data_loader, data_set=data_set, hyper_param=hyper_param, rebuild=True)   
 
-def _eval(mymodel: BLSTM_CRF, args, data_loader, data_set=None, RELOAD_MODEL=None, use_cuda=False):
+def _eval(mymodel, args, data_loader, data_set=None, RELOAD_MODEL=None, use_cuda=False):
     old_model_path = os.path.join(args.result_dir, RELOAD_MODEL)
     if RELOAD_MODEL is not None and os.path.exists(old_model_path):
         mymodel.load_model(old_model_path)
@@ -229,7 +223,6 @@ def main():
 
     ##获取数据集
     dataset = AutoKGDataset(args.dataset_dir)  
-
     # show_metadata(dataset.metadata_)
 
     LOGGER.info('===== Load metadata')
@@ -250,26 +243,27 @@ def main():
         'n_rel_tags' : len(data_loader.rel_seq_map_dict),  
         'n_rels' : len(data_loader.label_location_dict)+1,
         'n_words' : len(data_loader.character_location_dict),
-        'start_ent_idx': data_loader.ent_seq_map_dict[data_loader.START_TAG],  ## <start> tag index for entity tag seq
-        'end_ent_idx': data_loader.ent_seq_map_dict[data_loader.END_TAG],  ## <end> tag index for entity tag seq
-        'start_rel_idx': data_loader.rel_seq_map_dict[data_loader.START_TAG],  ## <start> tag index for relation tag seq
-        'end_rel_idx': data_loader.rel_seq_map_dict[data_loader.END_TAG],  ## <end> tag index for relation tag seq
         'use_cuda':args.use_cuda,
         'dropout_prob': 0,
-        'lstm_layer_num': 1  ##TODO:
-        # 'num_labels': len(data_loader.ent_seq_map_dict)
+        'lstm_layer_num': 1,
+        # 'start_ent_idx': data_loader.ent_seq_map_dict[data_loader.START_TAG],  ## <start> tag index for entity tag seq
+        # 'end_ent_idx': data_loader.ent_seq_map_dict[data_loader.END_TAG],  ## <end> tag index for entity tag seq
+        # 'start_rel_idx': data_loader.rel_seq_map_dict[data_loader.START_TAG],  ## <start> tag index for relation tag seq
+        # 'end_rel_idx': data_loader.rel_seq_map_dict[data_loader.END_TAG],  ## <end> tag index for relation tag seq
     }
-    ##TODO:
-    # mymodel = BLSTM_CRF(model_params, show_param=True)   
-    # mymodel = BERT_LSTM_CRF(model_params, show_param=True) 
-    # mymodel = BERT_MLP(model_params, show_param=True)
-    mymodel = BERT_NER(model_params, show_param=True)
-    # mymodel = BERT_CRF(model_params, show_param=True)
     
-
+    ##TODO:
+    ### 使用自己写的CRF的模型，效果差不多，简化代码，先不用了, not used now
+    ## mymodel = BLSTM_CRF(model_params, show_param=True)   
+    ## mymodel = BERT_LSTM_CRF(model_params, show_param=True) 
+    ## mymodel = BERT_CRF(model_params, show_param=True)
+    
+    ### 主要使用对比模型
+    # mymodel = BASELINE(model_params, show_param=True)    
+    mymodel = BERT_MLP(model_params, show_param=True)
+    # mymodel = BERT_NER(model_params, show_param=True)
     # mymodel = BERT_CRF2(model_params, show_param=True)
     # mymodel = BERT_LSTM_CRF2(model_params, show_param=True)
-    # mymodel = BASELINE(model_params, show_param=True)
 
     # mymodel = REL_BLSTM_CRF(model_params, show_param=True)
 
@@ -302,11 +296,6 @@ def main():
         LOGGER.info('===== Start Predict')
         _predict(mymodel, args, data_loader, data_set=test_dataset, RELOAD_MODEL='model_test.p', use_cuda=args.use_cuda)
     
-    # root_dir = _here(os.pardir)
-    # solution_path = os.path.join(root_dir, 's1/test.solution')
-    # test_dataset = dataset._read_dataset(solution_path)
-    # _eval(mymodel, args, data_loader, data_set=test_dataset)
-
 
 if __name__ == '__main__':
     main()

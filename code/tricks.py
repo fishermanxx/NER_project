@@ -7,6 +7,7 @@ class EMA():
         self.mu = mu
         self.shadow = {}
         self.backup = {}
+        self.old_ema = {}
 
     def register(self):
         for name, param in self.model.named_parameters():
@@ -33,6 +34,12 @@ class EMA():
                 assert name in self.backup
                 param.data = self.backup[name]
         self.backup = {}
+
+    def backup_oldema(self):
+        self.old_ema = copy.deepcopy(self.shadow)
+
+    def return_oldema(self):
+        self.shadow = copy.deepcopy(self.old_ema)
 
 
 class FocalLoss(nn.Module):

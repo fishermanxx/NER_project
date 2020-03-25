@@ -1,8 +1,8 @@
 python3 run_local.py \
     --use_cuda='1' \
-    --dataset_dir='./data/d15' \
-    --answer_dir='./data/s15' \
+    --dataset_dir='./data/d4' \
+    --answer_dir='./data/s4' \
     --code_dir='./rel_code' \
-    --task='relation' \
+    --task='baidu_person_rel' \
     --mode='train' \
     | tee log_info.txt

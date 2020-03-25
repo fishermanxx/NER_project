@@ -5,12 +5,15 @@ import os
 import json
 import numpy as np
 
-from utils import log, show_result
+from utils import log
 from utils import KGDataLoader, Batch_Generator
 
-from utils import my_lr_lambda
+# from utils import my_lr_lambda
 from torch.optim.lr_scheduler import LambdaLR
 from tricks import EMA
+
+def my_lr_lambda(epoch):
+    return 1/(1+0.05*epoch)
 
 class MODEL_TEMP(nn.Module):
     def __init__(self, config={}, show_param=False):
@@ -63,6 +66,26 @@ class MODEL_TEMP(nn.Module):
         else:
             pass
 
+    ##TODO:
+    def backup_param(self):
+        '''
+        for restore the parameters in learning epochs
+        '''
+        backup_p = {}
+        for name, param in self.named_parameters():
+            if param.requires_grad:
+                backup_p[name] = param.data.clone()
+        print('back_up successfully')
+        return backup_p
+
+    ##TODO:
+    def restore_param(self, backup_p):
+        for name, param in self.named_parameters():
+            if param.requires_grad:
+                assert name in backup_p
+                param.data = backup_p[name]
+        print('restore successfully')
+
     def train_model(self, data_loader: KGDataLoader, train_dataset=None, eval_dataset=None, hyper_param={}, use_cuda=None, rebuild=False):
         '''
         :param
@@ -84,20 +107,18 @@ class MODEL_TEMP(nn.Module):
         '''
         use_cuda = self.use_cuda if use_cuda is None else use_cuda
         use_ema = True
-
         ema = EMA(self, mu=0.99) if use_ema else None
+
         if use_cuda:
             print('use cuda=========================')
-            # print(torch.cuda.device_count())
-            # print(torch.cuda.current_device())
-            self.cuda()
+            self.cuda() 
 
         if use_ema:
             ema.register()
 
         EPOCH = hyper_param.get('EPOCH', 3)
         BATCH_SIZE = hyper_param.get('batch_size', 4)
-        LEARNING_RATE_upper = hyper_param.get('learning_rate_upper', 1e-2)
+        LEARNING_RATE_upper = hyper_param.get('learning_rate_upper', 1e-3)
         LEARNING_RATE_bert = hyper_param.get('learning_rate_bert', 5e-5)
         bert_finetune = hyper_param.get('bert_finetune', True)
         visualize_length = hyper_param.get('visualize_length', 10)
@@ -153,6 +174,15 @@ class MODEL_TEMP(nn.Module):
 
             log(f'EPOCH: {epoch+1}/{EPOCH}', 0)
             loss = 0.0
+
+            ##备份当前epoch训练之前的model和ema中的参数，用来回滚 TODO:
+            temp_param = self.backup_param()
+            if use_ema:
+                ema.backup_oldema()
+            # print('before train bias', self.embed2sub.bias)
+            # print('before ema bias', list(ema.shadow.values())[200], list(ema.shadow.keys())[200])
+            print(optimizer.state_dict()['param_groups'][0]['lr'], optimizer.state_dict()['param_groups'][1]['lr'])
+
             for cnt, data_batch in enumerate(data_generator):
                 x, pos, _, _, y_ent, lens, data_list = data_batch
                 
@@ -173,23 +203,14 @@ class MODEL_TEMP(nn.Module):
                 if (cnt+1) % visualize_length == 0:
                     loss_cur = loss / visualize_length
                     log(f'[TRAIN] step: {(cnt+1)*BATCH_SIZE}/{all_cnt} | loss: {loss_cur:.4f}', 1)
-                    loss = 0.0
-
-                    # self.eval()
-                    # print(data_list[0]['input'])
-                    # pre_paths, pre_scores = self._output(x, lens)
-                    # print('predict-path')
-                    # print(pre_paths[0])
-                    # print('target-path')
-                    # print(y_ent[0])
-                    # self.train()        
+                    loss = 0.0      
 
             if use_ema:
                 ema.apply_shadow()
 
             temp_score = self.eval_model(data_loader, data_set=eval_dataset, hyper_param=evel_param, use_cuda=use_cuda)
             score_record.append(temp_score)
-            scheduler.step()   #TODO:
+            # scheduler.step()   #TODO:
             
             if temp_score[2] > max_score:
                 max_score = temp_score[2]
@@ -197,8 +218,24 @@ class MODEL_TEMP(nn.Module):
                 self.save_model(save_path)
                 print(f'Checkpoint saved successfully, current best socre is {max_score}')
 
-            if use_ema:
-                ema.restore()
+                if use_ema:
+                    ema.restore()
+                    # print('restore bias', self.embed2sub.bias)
+
+            ##TODO:
+            elif temp_score[2] < max_score:
+                ###回滚到这个epoch之前的参数
+                self.restore_param(temp_param)
+                ema.return_oldema()
+                scheduler.step()
+                print(optimizer.state_dict()['param_groups'][0]['lr'], optimizer.state_dict()['param_groups'][1]['lr'])
+
+                if optimizer.state_dict()['param_groups'][0]['lr'] < 1e-4:
+                    print('early stop!!!')
+                    break
+            else:
+                if use_ema:
+                    ema.restore()
         log(f'the best score of the model is {max_score}')
         return loss_record, score_record
 

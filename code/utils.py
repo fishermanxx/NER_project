@@ -144,8 +144,6 @@ class BaseLoader:
         word_location_dict = {self.PAD_TAG: 0}
         for row_idx, word in enumerate(data_dict):
             word_location_dict[word] = row_idx + 1
-        # word_location_dict[self.START_TAG] = len(word_location_dict)
-        # word_location_dict[self.END_TAG] = len(word_location_dict)
         return word_location_dict 
 
     def _tokenizer(self, sentence):
@@ -170,7 +168,7 @@ class KGDataLoader(BaseLoader):
         self.dataset = dataset
         self.temp_dir = temp_dir
         self.metadata_ = dataset.metadata_
-        self.sentence_max_len = max(200, min(self.metadata_['avg_sen_len'], 200))  ##TODO:
+        self.sentence_max_len = max(100, min(self.metadata_['avg_sen_len'], 100))  ##TODO:
         
         self.joint_embedding_info_dicts_path = os.path.join(temp_dir, "joint_embedding_info_dict.pkl")
         if (not rebuild) and os.path.exists(self.joint_embedding_info_dicts_path):
@@ -254,12 +252,11 @@ class KGDataLoader(BaseLoader):
         entity_set = self.dataset.metadata_['entity_set']
         entity_type_dict = {}
         for index, each_entity in enumerate(entity_set):
-            ## (0, Time) B_0:1, I_0: 2, E_0: 3
-            ## (1, Number) B_1:4, I_1: 5, E_1: 6
             ent_seq_map_dict["B_{}".format(index)] = 3*index + 1
             ent_seq_map_dict["I_{}".format(index)] = 3*index + 2
             ent_seq_map_dict["E_{}".format(index)] = 3*index + 3
-            entity_type_dict[each_entity] = index   ##{Time: 0, Number: 1}
+            entity_type_dict[each_entity] = index 
+
         ## CRF需要，在tag中添加START_TAG以及END_TAG
         ent_seq_map_dict[self.START_TAG] = len(ent_seq_map_dict)
         ent_seq_map_dict[self.END_TAG] = len(ent_seq_map_dict)
@@ -798,139 +795,3 @@ class Batch_Generator(nn.Module):
                        self.sentence_length[old_current:to_], \
                        self.data_list[old_current:to_]
 
-
-if __name__ == '__main__':
-
-    # load_bert_pretrained_dict()
-    result_dir = './result/'
-    data_set = AutoKGDataset('./d1/')
-    train_dataset = data_set.train_dataset[:10]
-
-    import os
-    os.makedirs(result_dir, exist_ok=True)
-
-    data_loader = KGDataLoader(data_set, rebuild=False, temp_dir=result_dir)
-    show_dict_info(data_loader)
-    
-    # train_data_mat_dict = data_loader.transform_rel(train_dataset, istest=False, ratio=0)
-    train_data_mat_dict = data_loader.transform(train_dataset, istest=False, data_type='rel', ratio=0)
-    data_generator = Batch_Generator(train_data_mat_dict, batch_size=4, data_type='rel', isshuffle=True)
-    # data_generator = Batch_Generator(train_data_mat_dict, batch_size=4, data_type='ent', isshuffle=True)
-    
-    pred = data_loader.transform_back(train_data_mat_dict, data_type='rel')
-    for i in range(len(train_dataset)):
-        ori_data = train_dataset[i]
-        pre_data = pred[i]
-
-        print('origin sentence:')
-        print(ori_data['input'])
-        print('decode sentence')
-        print(pre_data['input'])
-
-        def str_relation_fn(item):
-            return item['relation']+'--'+item['head']+'--'+item['tail']
-
-        print('origin relation')
-        ori_relations_str = list(map(str_relation_fn, ori_data['output']['relation_list']))
-        print(ori_relations_str)
-        print('decode relation')
-        decode_relations_str = list(map(str_relation_fn, pre_data['relation_list']))
-        print(decode_relations_str)
-        print('='*80)
-        print()
-        # break
-
-    '''
-    for epoch in range(1):
-        print('='*100)
-        print('epoch %d' % (epoch))
-        for data_batch in data_generator:
-            x, pos, relation, y_rel, y_ent, sentence_length, data_list = data_batch
-            print(x.shape, pos.shape, y_rel.shape)  ##x, pos, y_rel, y_ent (batch_size, max_seq_length)
-            print(sentence_length)  ##relation(batch_size, 1), sentence_length, data_list  (batch_size)
-            print(relation.shape, relation[:, 0])
-            for i in range(x.shape[0]):
-                ori_data = data_list[i]
-
-                ## check x -- 句子字符层面上的编码======================
-                ori_sentence = ori_data['input']
-                x_i = x[i][:sentence_length[i]]
-                x_decode = [data_loader.inverse_character_location_dict[w] for w in x_i]
-                x_decode = ''.join(x_decode)
-                print('orgin sentence:', ori_sentence)
-                print('decode sentence:', x_decode)
-
-                ## check y_rel and relation -- relation======================
-                ori_relations = ori_data['output']['relation_list']
-                def str_relation(item):
-                    return item['relation']+'--'+item['head']+'--'+item['tail']
-                ori_relations_str = list(map(str_relation, ori_relations))
-                print('origin relations')
-                print(ori_relations_str)
-
-                relation_i = relation[i][0]
-                rel_type_decode = data_loader.inverse_label_location_dict[relation_i]
-                sub_decode = data_loader._obtain_sub_obj(y_rel[i], ori_sentence, entity_type='sub')
-                obj_decode = data_loader._obtain_sub_obj(y_rel[i], ori_sentence, entity_type='obj')
-                print('decode relations')
-                print(f"{rel_type_decode}--[{sub_decode[0]['entity']}]--[{obj_decode[0]['entity']}]")  
-
-                # relation_i = relation[i][0]
-                # rel_type_decode = data_loader.inverse_label_location_dict[relation_i]
-                # # print('decode relation type: ', rel_type_decode)
-                # relation_seq_i = y_rel[i, :sentence_length[i]]
-                # print('decode y_rel:')
-                # print(relation_seq_i)
-                # def rel_decode(y_rel, sentence):
-                #     obj, sub = '', ''
-                #     obj_s, obj_e, sub_s, sub_e = -1, -1, -1, -1
-                #     for idx, y_rel_i in enumerate(y_rel):
-                #         if obj_s < 0 and y_rel_i == 1:
-                #             obj_s = idx
-                #         if obj_e < 0 and y_rel_i == 3:
-                #             obj_e = idx
-                #         if sub_s < 0 and y_rel_i == 4:
-                #             sub_s = idx
-                #         if sub_e < 0 and y_rel_i == 6:
-                #             sub_e = idx
-                #     if obj_s >= 0 and obj_e > 0 and obj_s < obj_e:
-                #         obj = sentence[obj_s:obj_e+1]
-                #     if sub_s >= 0 and sub_e > 0 and sub_s < sub_e:
-                #         sub = sentence[sub_s:sub_e+1]    
-                #     return sub, obj
-                # sub, obj = rel_decode(relation_seq_i, ori_sentence)  
-                # print(f'decode relations')
-                # print(f'{rel_type_decode}--[{sub}]--[{obj}]')              
-                # print('='*80)
-
-                ## check y_ent -- entity============================
-                # ori_sentence = ori_data['input']
-                # ori_entitys = ori_data['output']['entity_list']
-                # print('ori_entitys', ori_entitys)
-                # ent_i = y_ent[i][:sentence_length[i]]
-                # ent_decode = data_loader._obtain_entity(ent_i, ori_sentence)
-                # print('ent_decode', ent_decode)
-                # print(type(ent_decode), type(list(ent_decode)[0]))
-
-                ## check pos============================
-                # ori_sentence = ori_data['input']
-                # ori_pos = pseg.cut(ori_sentence)
-                # wlist, plist = [], []
-                # for wp in ori_pos:
-                #     wlist.append(wp.word)
-                #     plist.append(wp.flag)
-                # pos_i = pos[i][:sentence_length[i]]
-                # pos_decode = [data_loader.inverse_pos_location_dict[p] for p in pos_i]
-                # print(wlist[:5])
-                # print(plist[:5])
-                # pos_check = list(zip(list(ori_sentence), pos_decode))
-                # print(pos_check)
-
-                break
-            break
-            print('='*80)
-        break
-        print()
-        '''
-
-        

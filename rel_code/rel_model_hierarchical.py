@@ -1,9 +1,8 @@
 # !-*- coding:utf-8 -*-
 
 from dataset import AutoKGDataset
-# from utils import KGDataLoader, Batch_Generator
 from dataloader3 import KGDataLoader3, Batch_Generator3
-from utils import log, show_result
+from utils import log
 
 import transformers
 import torch
@@ -23,10 +22,7 @@ import numpy as np
 
 import time
 
-# from model import MODEL_TEMP
-
-
-os.environ['CUDA_VISIBLE_DEVICES'] = '4'
+# os.environ['CUDA_VISIBLE_DEVICES'] = '7'
 seed = 1
 torch.manual_seed(seed)
 np.random.seed(seed)
@@ -86,13 +82,7 @@ class BERT_Hierarchical(nn.Module):
         :param - dict
             param['embedding_dim']
             param['n_rels']
-
-            param['n_ent_tags']  ##not used
-            param['n_rel_tags'] ##not used
-            param['n_words']  ##not used, for word embedding layer
-
             param['use_cuda']
-            param['dropout_prob']
         '''
         super(BERT_Hierarchical, self).__init__()
         self.config = config
@@ -122,10 +112,10 @@ class BERT_Hierarchical(nn.Module):
         self.bert = transformers.BertModel.from_pretrained('bert-base-chinese')
         self.embed2sub = nn.Linear(self.embedding_dim, 2)
         self.embed2obj = nn.Linear(self.embedding_dim, 2*self.n_rels)
-        # self.loss_fn = nn.BCELoss(reduction='none')
 
-        weight = torch.tensor([1, 10]).float()  ###(0:weight, 1: weight)   ##TODO:
-        self.loss_fn = FocalLoss(alpha=weight, gamma=0, size_average=False)
+        # self.loss_fn = nn.BCELoss(reduction='none')
+        self.weight = torch.tensor([1, 1], requires_grad=False).float()  ###(0:weight, 1: weight) (1, 10)  ##TODO:
+        self.loss_fn = FocalLoss(alpha=self.weight, gamma=0, size_average=False)
 
     def reset_parameters(self):        
         I.xavier_normal_(self.embed2sub.weight.data)
@@ -173,7 +163,6 @@ class BERT_Hierarchical(nn.Module):
         # print(sub_mean_features.shape)
 
         return sub_mean_features
-        # return embeds[:, 0, :]
 
     def _loss(self, x, y_rel, lens):
         '''
@@ -188,8 +177,6 @@ class BERT_Hierarchical(nn.Module):
         def random_pick(item): 
             return random.choice(list(item))
 
-        # start_time = time.time()
-
         use_cuda = self.use_cuda
         batch_size, max_length = x.shape[0], x.shape[1]
         lens_t = self._to_tensor(lens, use_cuda)
@@ -199,28 +186,15 @@ class BERT_Hierarchical(nn.Module):
         y_sub = self._to_tensor(y_sub, use_cuda).float()  ##(N, T, 2)
      
         ##batch中每个句子random pick 一个subject来做训练, y_obj target sequence
-        subids = list(map(random_pick, y_rel))  ##(N, 2)， 2-start, end    ###TODO:检查传入的end具体是单词的最后一个还是后一个
-        # print('subids:', subids)
-
+        subids = list(map(random_pick, y_rel))  ##(N, 2)， 2-start, end  
 
         y_obj = self._convert_y_obj(y_rel, subids, max_length, self.n_rels)   ##(N, T, 2*n_rels)
         y_obj = self._to_tensor(y_obj, use_cuda).float()
 
-        # trans_time = time.time()
-        # show_time(trans_time-start_time, 'transform data time')
-
         ##根据随机sample出的subject来进行的编码，要和句子embedding重新组合，得到object decode 的输入
         subids = self._to_tensor(subids, use_cuda) ##(N, 2)
         embeds = self._get_bert_embedding(x, lens)  ###(N, T, n_embed)
-
-        # embeds_time = time.time()
-        # show_time(embeds_time-trans_time, 'embedding data time')
-
         sub_features = self._get_subject_features(embeds, subids)  ##(N, n_embed)
-        # print('sub_features:', sub_features.shape)
-
-        # sub_feature_time = time.time()
-        # show_time(sub_feature_time-embeds_time, 'get sub feature time')
 
         ## 预测出的obj sequence
         sub_features_exp = sub_features.unsqueeze(dim=1).expand(batch_size, max_length, embeds.shape[2])  ##(N, T, n_embed)
@@ -228,15 +202,9 @@ class BERT_Hierarchical(nn.Module):
         obj_pred = torch.sigmoid(self.embed2obj(obj_inputs))  ##(N, T, 2*n_rels)
         # obj_pred = obj_pred**4  ##deal with the mismatch of positive and negative samples numbers
 
-        # obj_pred_time = time.time()
-        # show_time(obj_pred_time-sub_feature_time, 'pred obj time')
-
         ##预测出的sub sequence
         sub_pred = torch.sigmoid(self.embed2sub(embeds))  ###(N, T, 2)
         # sub_pred = sub_pred**2  ##deal with the mismatch of positive and negative samples numbers
-
-        # sub_pred_time = time.time()
-        # show_time(sub_pred_time-obj_pred_time, 'pred sub time')
 
         ## 计算loss
         mask = self._generate_mask(lens_t, max_length).float()  ##(N, T)
@@ -249,12 +217,7 @@ class BERT_Hierarchical(nn.Module):
         obj_loss = obj_loss.mean(dim=2)  ##(N, T)
         obj_loss = (obj_loss*mask).sum()/mask.sum()
 
-        # loss_time = time.time()
-        # show_time(loss_time-sub_pred_time, 'cal loss time')
-        # print()
-
-        
-        ##TODO: 尝试解决正负样本不均衡
+        ##TODO: 尝试解决正负样本不均衡 -- 也可以用trick中的focalloss来解决
         # class_weight = torch.tensor([1, 10]).float()
         # weight = class_weight[y_sub.long()]  ##(N, T, 2)
         # sub_loss_fn = torch.nn.BCELoss(weight=weight, reduction='mean')
@@ -263,7 +226,6 @@ class BERT_Hierarchical(nn.Module):
         # weight = class_weight[y_obj.long()]  ##(N, T, 2*n_rels)
         # obj_loss_fn = torch.nn.BCELoss(weight=weight, reduction='mean')
         # obj_loss = obj_loss_fn(obj_pred, y_obj.float())
-
         return sub_loss + obj_loss
 
     def _output(self, x, lens, threshold=0.5):
@@ -290,9 +252,6 @@ class BERT_Hierarchical(nn.Module):
         spoes = {}
         for start, end in sub_list[:4]:  ##只取前五个subject
             sub_i = (start, end)
-            # if start>end:
-            #     print('start is larger than end for subject')
-            # print('sub_i:', sub_i)
 
             subids = [[start, end]]
             subids = self._to_tensor(subids, use_cuda) ##(1, 2)
@@ -309,13 +268,8 @@ class BERT_Hierarchical(nn.Module):
 
             objr_list = self._convert_relation_back(obj_pred_int, lens)
             if len(objr_list) > 0:
-                # spoes[sub_i] = objr_list
-
-                ##删除主语和宾语相同的情况(TODO:)
+                ##删除主语和宾语相同的情况
                 new_objr_list = [objr for objr in objr_list if objr[0] != sub_i[0]]
-                # for objr in objr_list:
-                #     if objr[0] != sub_i[0]:
-                #         new_objr_list.append(objr)
                 spoes[sub_i] = new_objr_list
             
         return [spoes]
@@ -331,6 +285,24 @@ class BERT_Hierarchical(nn.Module):
                 self.load_state_dict(torch.load(path, map_location=torch.device('cpu')))
         else:
             pass
+
+    def backup_param(self):
+        '''
+        for restore the parameters in learning epochs
+        '''
+        backup_p = {}
+        for name, param in self.named_parameters():
+            if param.requires_grad:
+                backup_p[name] = param.data.clone()
+        print('back_up successfully')
+        return backup_p
+
+    def restore_param(self, backup_p):
+        for name, param in self.named_parameters():
+            if param.requires_grad:
+                assert name in backup_p
+                param.data = backup_p[name]
+        print('restore successfully')
 
     def train_model(self, data_loader, train_dataset=None, eval_dataset=None, hyper_param={}, rebuild=False):
         '''
@@ -390,6 +362,16 @@ class BERT_Hierarchical(nn.Module):
                 data_loader.save_preprocessed_data(old_train_dict_path, train_data_mat_dict)
         ## 保存预处理的文本，这样调参的时候可以直接读取，节约时间   *WARNING*
 
+        ##TODO: 根据subject的平均数目以及句子的平均长度来设置self.weight的权重
+        avg_length = data_loader.metadata_['avg_sen_len']
+        avg_sub = train_data_mat_dict['total_sub']/len(train_data_mat_dict['y_rel_list'])
+        weight_1 = round(avg_length/avg_sub/10, 2)
+        self.weight[1] = weight_1
+        print(self.weight)
+        # print('total sub:', train_data_mat_dict['total_sub'])
+        # print('total sentence: ', len(train_data_mat_dict['y_rel_list']))
+        # print('avg length:', data_loader.metadata_['avg_sen_len'])
+
         data_generator = Batch_Generator3(train_data_mat_dict, batch_size=BATCH_SIZE, data_type=DATA_TYPE, isshuffle=is_shuffle)
 
         all_param = list(self.named_parameters()) 
@@ -408,10 +390,9 @@ class BERT_Hierarchical(nn.Module):
             log(f'****BERT_fix, learning_rate_upper: {LEARNING_RATE_upper}', 0)
         
         ##TODO:
-        # scheduler = LambdaLR(optimizer, lr_lambda=my_lr_lambda)
+        scheduler = LambdaLR(optimizer, lr_lambda=my_lr_lambda)
         # scheduler = transformers.optimization.get_cosine_schedule_with warmup(optimizer, num_warmup_steps=int(EPOCH*0.2), num_training_steps=EPOCH)
         
-
         all_cnt = len(train_data_mat_dict['cha_matrix'])
         log(f'{model_name} Training start!', 0)
         loss_record = []
@@ -424,6 +405,15 @@ class BERT_Hierarchical(nn.Module):
 
             log(f'EPOCH: {epoch+1}/{EPOCH}', 0)
             loss = 0.0
+
+            ##备份当前epoch训练之前的model和ema中的参数，用来回滚
+            temp_param = self.backup_param()
+            if use_ema:
+                ema.backup_oldema()
+            print('before train bias', self.embed2sub.bias)
+            print('before ema bias', list(ema.shadow.values())[200], list(ema.shadow.keys())[200])
+            print(optimizer.state_dict()['param_groups'][0]['lr'], optimizer.state_dict()['param_groups'][1]['lr'])
+
             for cnt, data_batch in enumerate(data_generator):
 
                 x, pos, y_rel, y_ent, lens, data_list = data_batch
@@ -464,11 +454,25 @@ class BERT_Hierarchical(nn.Module):
                 max_score = temp_score[2]
                 save_path = os.path.join(result_dir, model_name)
                 self.save_model(save_path)
-                print(f'Checkpoint saved successfully, current best socre is {max_score}')
+                print(f'Checkpoint saved successfully, current best score is {max_score}')
 
-            if use_ema:
-                ema.restore()
-                # print('restore bias', self.embed2sub.bias)
+                if use_ema:
+                    ema.restore()
+                    # print('restore bias', self.embed2sub.bias)
+            elif temp_score[2] < max_score:
+                ###回滚到这个epoch之前的参数
+                self.restore_param(temp_param)
+                ema.return_oldema()
+                scheduler.step()
+                print(optimizer.state_dict()['param_groups'][0]['lr'], optimizer.state_dict()['param_groups'][1]['lr'])
+
+                if optimizer.state_dict()['param_groups'][0]['lr'] < 1e-4:
+                    print('early stop!!!')
+                    break
+            else:
+                if use_ema:
+                    ema.restore()
+                
             
         log(f'the best score of the model is {max_score}')
         return loss_record, score_record
@@ -760,44 +764,7 @@ class BERT_Hierarchical(nn.Module):
 
 
 if __name__ == '__main__':
-    # model_config = {
-    #     'embedding_dim' : 768,
-    #     'n_rels': 2,
-    #     'use_cuda':0,
-    #     'dropout_prob': 0,
-    # }
-    
-    # mymodel = BERT_Hierarchical(model_config, show_param=True)
 
-    ###===========================================================
-    ###模型参数测试
-    ###===========================================================
-    ### case1
-    # all_param = list(mymodel.named_parameters()) 
-    # all_param2 = list(mymodel.parameters())
-    # bert_param = [(n, p) for n, p in all_param if 'bert' in n]
-    # other_param = [(n, p) for n, p in all_param if 'bert' not in n]
-    # print(f'all_param: {len(all_param)}')
-    # print(f'bert_param: {len(bert_param)}')
-    # print(f'other_param: {len(other_param)}')
-    # for n, p in other_param:
-    #     print(n, p.shape)
-
-    # print('='*80)
-    # crf_param = list(mymodel.crf.named_parameters())
-    # crf_param2 = list(mymodel.crf.parameters())
-    # fc_param = list(mymodel.hidden2tag.named_parameters())
-    # fc_param2 = list(mymodel.hidden2tag.parameters())
-    # bert_param = list(mymodel.bert.named_parameters())
-    # bert_param2 = list(mymodel.bert.parameters())
-    # print(f'all_param: {len(all_param)}, {len(all_param2)}')
-    # print(f'crf_param: {len(crf_param)}, {len(crf_param2)}')
-    # print(f'fc_param: {len(fc_param)}, {len(fc_param2)}')
-    # print(f'bert_param: {len(bert_param)}, {len(bert_param2)}')
-
-    # other_param2 = crf_param + fc_param
-    # for n, p in other_param2:
-    #     print(n, p.shape)
 
     ###===========================================================
     ###试训练

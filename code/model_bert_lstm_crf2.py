@@ -10,9 +10,6 @@ from torch import nn
 import torch.nn.init as I
 from torch.autograd import Variable
 
-# from utils import my_lr_lambda
-# from torch.optim.lr_scheduler import LambdaLR
-
 import os
 
 from model import MODEL_TEMP
@@ -30,12 +27,6 @@ class BERT_LSTM_CRF2(MODEL_TEMP):
             param['embedding_dim']
             param['hidden_dim']
             param['n_ent_tags']
-            param['n_rel_tags']
-            param['n_words']
-            param['start_ent_idx']  int, <start> tag index for entity tag seq
-            param['end_ent_idx']   int, <end> tag index for entity tag seq
-            param['start_rel_idx']
-            param['end_rel_idx']
             param['use_cuda']
             param['dropout_prob']
             param['lstm_layer_num']
@@ -45,8 +36,7 @@ class BERT_LSTM_CRF2(MODEL_TEMP):
         self.embedding_dim = self.config.get('embedding_dim', 768)
         self.hidden_dim = self.config.get('hidden_dim', 64)  ##TODO: 128*2
         assert self.hidden_dim % 2 == 0, 'hidden_dim for BLSTM must be even'
-        self.n_tags = self.config.get('n_ent_tags', 45) - 2
-        # self.n_words = self.config.get('n_words', 10000)
+        self.n_tags = self.config['n_ent_tags'] - 2
 
         self.dropout_prob = self.config.get('dropout_prob', 0)
         self.lstm_layer_num = self.config.get('lstm_layer_num', 1)
@@ -66,8 +56,6 @@ class BERT_LSTM_CRF2(MODEL_TEMP):
         log(f'embedding_dim: {self.embedding_dim}', 1)
         log(f'hidden_dim: {self.hidden_dim}', 1)
         log(f'n_ent_tags: {self.n_tags}', 1)
-        log(f"crf_start_idx: {self.config['start_ent_idx']}", 1)
-        log(f"crf_end_idx: {self.config['end_ent_idx']}", 1)
         log(f'lstm_layer_num: {self.lstm_layer_num}', 1)
         log(f'dropout_prob: {self.dropout_prob}', 1)  
         log('='*80, 0)      
@@ -94,7 +82,6 @@ class BERT_LSTM_CRF2(MODEL_TEMP):
         
     def _get_lstm_features(self, x, lens, use_cuda=None):
         '''
-        TODO: 添加关于句子长度处理的部分
         :param  
             @x: index之后的word, 每个字符按照字典对应到index, (batch_size, T), np.array
             @lens: 每个句子的实际长度

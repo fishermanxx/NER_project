@@ -10,16 +10,12 @@ from torch import nn
 import torch.nn.init as I
 from torch.autograd import Variable
 
-# from utils import my_lr_lambda
-# from torch.optim.lr_scheduler import LambdaLR
-
 import os
 
 from model import MODEL_TEMP
-# from model_crf import CRF
 from torchcrf import CRF
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '7'
+# os.environ['CUDA_VISIBLE_DEVICES'] = '7'
 torch.manual_seed(1)
 
 class BERT_CRF2(MODEL_TEMP):
@@ -27,25 +23,13 @@ class BERT_CRF2(MODEL_TEMP):
         '''
         :param - dict
             param['embedding_dim']
-            param['hidden_dim']
             param['n_ent_tags']
-            param['n_rel_tags']
-            param['n_words']
-            param['start_ent_idx']  int, <start> tag index for entity tag seq
-            param['end_ent_idx']   int, <end> tag index for entity tag seq
-            param['start_rel_idx']
-            param['end_rel_idx']
             param['use_cuda']
-            param['dropout_prob']
-            param['lstm_layer_num']
         '''
         super(BERT_CRF2, self).__init__()
         self.config = config
         self.embedding_dim = self.config.get('embedding_dim', 768)
         self.n_tags = self.config['n_ent_tags']-2
-        # self.n_words = self.config['n_words']
-        # self.dropout_prob = self.config.get('dropout_prob', 0)
-
         self.use_cuda = self.config['use_cuda']
         self.model_type = 'BERT_CRF2'
 
@@ -60,9 +44,6 @@ class BERT_CRF2(MODEL_TEMP):
         log(f'use_cuda: {self.use_cuda}', 1)
         log(f'embedding_dim: {self.embedding_dim}', 1)       
         log(f'n_ent_tags: {self.n_tags}', 1)
-        log(f"crf_start_idx: {self.config['start_ent_idx']}", 1)
-        log(f"crf_end_idx: {self.config['end_ent_idx']}", 1)
-        # log(f'dropout_prob: {self.dropout_prob}', 1)  
         log('='*80, 0)      
 
     def build_model(self):
@@ -144,49 +125,11 @@ class BERT_CRF2(MODEL_TEMP):
 if __name__ == '__main__':
     model_params = {
         'embedding_dim' : 768,
-        'hidden_dim' : 64,
-        'n_tags' : 45,
-        'n_words' : 22118,
-        'start_idx': 43,  ## <start> tag index for entity tag seq
-        'end_idx': 44,  ## <end> tag index for entity tag seq
-        'use_cuda':1,
-        'dropout_prob': 0,
-        'lstm_layer_num': 1,
-        'num_labels': 45
+        'n_ent_tags' : 45,
+        'use_cuda':False,
     }
     
-    mymodel = BERT_CRF(model_params, show_param=True).cuda()
-
-
-    ###===========================================================
-    ###模型参数测试
-    ###===========================================================
-    ### case1
-    all_param = list(mymodel.named_parameters()) 
-    all_param2 = list(mymodel.parameters())
-    bert_param = [(n, p) for n, p in all_param if 'bert' in n]
-    other_param = [(n, p) for n, p in all_param if 'bert' not in n]
-    print(f'all_param: {len(all_param)}')
-    print(f'bert_param: {len(bert_param)}')
-    print(f'other_param: {len(other_param)}')
-    for n, p in other_param:
-        print(n, p.shape)
-
-    print('='*80)
-    crf_param = list(mymodel.crf.named_parameters())
-    crf_param2 = list(mymodel.crf.parameters())
-    fc_param = list(mymodel.hidden2tag.named_parameters())
-    fc_param2 = list(mymodel.hidden2tag.parameters())
-    bert_param = list(mymodel.bert.named_parameters())
-    bert_param2 = list(mymodel.bert.parameters())
-    print(f'all_param: {len(all_param)}, {len(all_param2)}')
-    print(f'crf_param: {len(crf_param)}, {len(crf_param2)}')
-    print(f'fc_param: {len(fc_param)}, {len(fc_param2)}')
-    print(f'bert_param: {len(bert_param)}, {len(bert_param2)}')
-
-    other_param2 = crf_param + fc_param
-    for n, p in other_param2:
-        print(n, p.shape)
+    mymodel = BERT_CRF(model_params, show_param=True)
 
     ###===========================================================
     ###试训练
@@ -201,6 +144,7 @@ if __name__ == '__main__':
     # data_loader = KGDataLoader(data_set, rebuild=False, temp_dir='result/')
 
     # # print(data_loader.embedding_info_dicts['entity_type_dict'])
+ 
  
     # train_data_mat_dict = data_loader.transform(train_dataset)
     # data_generator = Batch_Generator(train_data_mat_dict, batch_size=4, data_type='ent', isshuffle=True)
