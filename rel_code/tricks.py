@@ -46,16 +46,16 @@ class FocalLoss(nn.Module):
     def __init__(self, alpha=None, gamma=2, size_average=False):
         super(FocalLoss, self).__init__()
         if alpha is None:
-            # self.alpha = torch.ones(2).requires_grad_()
-            self.alpha = torch.ones(2, requires_grad=False)
+            self.alpha = torch.ones(2).requires_grad_()
+            # self.alpha = torch.ones(2, requires_grad=False)  ##no grad
         else:
             assert alpha.shape == (2,), 'this is for sigmoid, alpha dim must be (2,)'
             if alpha.requires_grad:
-                alpha.requires_grad=False
+                # alpha.requires_grad=False  ##no grad  
                 self.alpah = alpha.float()
             else:
-                # self.alpha = alpha.float().requires_grad_()
-                self.alpha = alpha.float()
+                self.alpha = alpha.float().requires_grad_()
+                # self.alpha = alpha.float()  ##no grad
         
         self.gamma = gamma
         self.class_num = 2

@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 import argparse
 
 os.environ['CUDA_DEVICE_ORDER'] = "PCI_BUS_ID"
-os.environ['CUDA_VISIBLE_DEVICES'] = '7'
+os.environ['CUDA_VISIBLE_DEVICES'] = '5'
 
 seed = 1
 torch.manual_seed(seed)

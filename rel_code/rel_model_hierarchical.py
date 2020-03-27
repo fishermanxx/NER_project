@@ -366,8 +366,9 @@ class BERT_Hierarchical(nn.Module):
         avg_length = data_loader.metadata_['avg_sen_len']
         avg_sub = train_data_mat_dict['total_sub']/len(train_data_mat_dict['y_rel_list'])
         weight_1 = round(avg_length/avg_sub/10, 2)
-        self.weight[1] = weight_1
+        # self.weight[1] = weight_1
         print(self.weight)
+
         # print('total sub:', train_data_mat_dict['total_sub'])
         # print('total sentence: ', len(train_data_mat_dict['y_rel_list']))
         # print('avg length:', data_loader.metadata_['avg_sen_len'])
@@ -440,6 +441,7 @@ class BERT_Hierarchical(nn.Module):
                 if (cnt+1) % visualize_length == 0:
                     loss_cur = loss / visualize_length
                     log(f'[TRAIN] step: {(cnt+1)*BATCH_SIZE}/{all_cnt} | loss: {loss_cur:.4f}', 1)
+                    print('self.alpha: ', self.weight)
                     loss = 0.0
 
             if use_ema:
