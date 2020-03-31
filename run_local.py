@@ -70,26 +70,12 @@ def run(dataset_dir, answer_dir, code_dir, task, time_budget=7200, mode='train',
         f'--use_cuda={use_cuda} --mode={mode}'
     )
 
-    command_select_param = (
-        'python3 -u '
-        f'{path_select_param} --dataset_dir={dataset_dir} '
-        f'--code_dir={code_dir} --time_budget={time_budget} --task={task} '
-        f'--use_cuda={use_cuda}'
-    )
-
-
     def run_train():
         os.system(command_train)
-    def run_select_param():
-        os.system(command_select_param)
 
     train_process = Process(name='train', target=run_train)
-    select_param_process = Process(name='select_param', target=run_select_param)
 
-    if mode == 'model_select':
-        select_param_process.start()
-    else:
-        train_process.start()
+    train_process.start()
 
 def main():
     args = _parse_args()

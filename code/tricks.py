@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+import copy
 
 class EMA():
     def __init__(self, model, mu=0.999):

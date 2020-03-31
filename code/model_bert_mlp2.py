@@ -13,14 +13,14 @@ import os
 
 from model import MODEL_TEMP
 
-class BERT_NER(MODEL_TEMP):
+class BERT_MLP2(MODEL_TEMP):
     def __init__(self, config={}, show_param=False):
         '''
         :param
             @params['n_ent_tags']
             @params['use_cuda']
         '''
-        super(BERT_NER, self).__init__()
+        super(BERT_MLP2, self).__init__()
         self.config = config
         self.num_labels = self.config.get('n_ent_tags', 45) - 2
         self.use_cuda = self.config.get('use_cuda', False)

@@ -168,7 +168,8 @@ class KGDataLoader(BaseLoader):
         self.dataset = dataset
         self.temp_dir = temp_dir
         self.metadata_ = dataset.metadata_
-        self.sentence_max_len = max(100, min(self.metadata_['avg_sen_len'], 100))  ##TODO:
+        # self.sentence_max_len = max(100, min(self.metadata_['avg_sen_len'], 100))  ##TODO:  手动设定最长距离
+        self.sentence_max_len = self.metadata_['mode_sen_len']  ##TODO:  根据数据集来选取的合适最长距离
         
         self.joint_embedding_info_dicts_path = os.path.join(temp_dir, "joint_embedding_info_dict.pkl")
         if (not rebuild) and os.path.exists(self.joint_embedding_info_dicts_path):
@@ -187,7 +188,7 @@ class KGDataLoader(BaseLoader):
         self.inverse_entity_type_dict = self._inverse_dict(self.entity_type_dict)
 
         # self.character_location_dict = self.embedding_info_dicts['character_location_dict']  #TODO:choose the pretrained dict
-        self.character_location_dict = load_bert_pretrained_dict()  ## input字符序列字典
+        self.character_location_dict = load_bert_pretrained_dict()  ## input字符序列字典， pretrain好的bert自带的字典
         self.inverse_character_location_dict = self._inverse_dict(self.character_location_dict)
 
         self.pos_location_dict = self.embedding_info_dicts['pos_location_dict']  ## 词性序列字典

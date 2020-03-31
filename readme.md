@@ -69,6 +69,3 @@ it will generate a fold at the root dir such as `./result/` and a log file `./lo
     score.png
 
 # Dataset details
-| 表格      | 第一列     | 第二列     |
-| ---------- | :-----------:  | :-----------: |
-| 第一行     | 第一列     | 第二列     |

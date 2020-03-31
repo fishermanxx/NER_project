@@ -137,6 +137,7 @@ class AutoKGDataset:
 
         self.metadata_['max_sen_len'] = max_sen_len
         self.metadata_['avg_sen_len'] = int(sen_len / sen_cnt)
+        self.metadata_['mode_sen_len'] = self.count_length(threshold=98)
 
         self.metadata_['train_num'] = len(self.all_train_dataset)
         self.metadata_['test_num'] = len(self.test_dataset)
@@ -144,6 +145,31 @@ class AutoKGDataset:
     def get_metadata(self):
         return self.metadata_   
              
+    def count_length(self, threshold=95):
+        s_len = [0]*31
+        for idx, sample in enumerate(self.all_train_dataset):
+            sen_len_id = len(sample['input'])//10
+            if sen_len_id > 30:
+                s_len[30] += 1
+            else:
+                s_len[sen_len_id] += 1
+
+        total_n = sum(s_len)
+        ratio_arr = []
+        cur = 0
+        res, res_ratio = -1, -1
+        for i in range(len(s_len)):
+            cur += s_len[i]
+            temp = round(100*cur/total_n, 2)
+            ratio_arr.append(temp)
+            if temp > threshold and res < 0:
+                res = 10*(i+1)
+                res_ratio = temp
+        
+        # print(list(enumerate(ratio_arr)))
+        # print(res, res_ratio)
+        return res
+
     @staticmethod
     def _read_metadata(metadata_path):
         return json.load(open(metadata_path))
@@ -162,12 +188,15 @@ class AutoKGDataset:
     def check_repeat_sentence(dataset):
         new_dataset = []
         seen_sentence = set()
+        cnt = 0
         for item in dataset:
             if item['input'] in seen_sentence:
-                print(f"remove repeat sentence: {item['input']}")
+                # print(f"remove repeat sentence: {item['input']}")
+                cnt += 1
                 continue
             seen_sentence.add(item['input'])
             new_dataset.append(item)
+        print(f'remove repeat sentence {cnt}')
         return new_dataset
 
 

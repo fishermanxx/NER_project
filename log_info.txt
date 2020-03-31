@@ -1,35 +1,90 @@
-2020-03-27 14:31:01,943 INFO train.py: ===== Start program
-2020-03-27 14:31:01,943 INFO train.py: ===== Initialize args
-2020-03-27 14:31:01,946 INFO train.py: ===== task mode: train
-remove repeat sentence 0
-remove repeat sentence 0
-2020-03-27 14:31:03,007 INFO train.py: ===== Load metadata
-2020-03-27 14:31:03,007 INFO train.py: ===== use_cuda: 1
-2020-03-27 14:31:03,008 INFO train.py: Time budget: 15000
-max sentence length:  130
+2020-03-31 08:14:31,526 INFO train.py: ===== Start program
+2020-03-31 08:14:31,526 INFO train.py: ===== Initialize args
+2020-03-31 08:14:31,528 INFO train.py: ===== task mode: train
+remove repeat sentence 668
+remove repeat sentence 1676
+2020-03-31 08:14:42,361 INFO train.py: ===== Load metadata
+2020-03-31 08:14:42,362 INFO train.py: ===== use_cuda: 1
+2020-03-31 08:14:42,362 INFO train.py: Time budget: 15000
+===================info about the data======================
+entity type dict length: 4
+entity type: ['LOC', 'PER', 'T', 'ORG']
+============================================================
+
+290
 ================================================================================
-----model_type: BERT_Hierarchical
+----model_type: BERT_NER
+----n_ent_tags: 13
 ----use_cuda: 1
-----embedding_dim: 768
-----n_rel_types: 10
 ================================================================================
-remove repeat sentence 0
-2020-03-27 14:31:36,628 INFO train.py: ===== Start Train
-2020-03-27 14:31:36,628 INFO train.py: There is no such file in /mnt/disk0/home/xuxin/mywork/rel_code/../result/model_test.p, Rebuild model
+remove repeat sentence 1676
+2020-03-31 08:15:13,495 INFO train.py: ===== Start Train
+2020-03-31 08:15:22,473 INFO train.py: Reload model successfully~
 use cuda=========================
 Reload preprocessed data successfully~
-tensor([1., 1.], requires_grad=True)
 ****BERT_finetune, learning_rate_upper: 0.001, learning_rate_bert: 5e-05
 model_test.p Training start!
-EPOCH: 1/20
-back_up successfully
-before train bias Parameter containing:
-tensor([ 0.0053, -0.0308], device='cuda:0', requires_grad=True)
-before ema bias tensor([ 0.0053, -0.0308], device='cuda:0') embed2sub.bias
-0.001 5e-05
-----[TRAIN] step: 320/9075 | loss: 0.1948
-self.alpha:  tensor([1., 1.], requires_grad=True)
-----[TRAIN] step: 640/9075 | loss: 0.0637
-self.alpha:  tensor([1., 1.], requires_grad=True)
-----[TRAIN] step: 960/9075 | loss: 0.0422
-self.alpha:  tensor([1., 1.], requires_grad=True)
+the best score of the model is 0
+2020-03-31 08:15:25,598 INFO common.py: training success, time spent so far 3.1240 sec
+
+
+2020-03-31 08:15:25,834 INFO train.py: ===== Start Eval
+2020-03-31 08:15:26,129 INFO train.py: Reload model successfully~
+2020-03-31 08:15:26,129 INFO train.py: reload model model_test.p
+use cuda=========================
+use cuda=========================
+Process 0.000 
+Process 0.036 
+Process 0.072 
+Process 0.108 
+Process 0.144 
+Process 0.180 
+Process 0.216 
+Process 0.252 
+Process 0.288 
+Process 0.324 
+Process 0.360 
+Process 0.396 
+Process 0.432 
+Process 0.469 
+Process 0.505 
+Process 0.541 
+Process 0.577 
+Process 0.613 
+Process 0.649 
+Process 0.685 
+Process 0.721 
+Process 0.757 
+Process 0.793 
+Process 0.829 
+Process 0.865 
+Process 0.901 
+Process 0.937 
+Process 0.973 
+Predict start!
+----[PREDICT] step 1000/8324
+----[PREDICT] step 2000/8324
+----[PREDICT] step 3000/8324
+----[PREDICT] step 4000/8324
+----[PREDICT] step 5000/8324
+----[PREDICT] step 6000/8324
+----[PREDICT] step 7000/8324
+----[PREDICT] step 8000/8324
+save the predict result in /mnt/disk0/home/xuxin/mywork/code/../result/predict.json
+len: pred_result 8324
+len: eva_data_set 8324
+Eval start
+----[EVAL] step 1000/8324 | precision: 0.965 | recall: 0.951 | f1 score: 0.958
+----[EVAL] step 2000/8324 | precision: 0.963 | recall: 0.95 | f1 score: 0.956
+----[EVAL] step 3000/8324 | precision: 0.961 | recall: 0.952 | f1 score: 0.956
+----[EVAL] step 4000/8324 | precision: 0.962 | recall: 0.951 | f1 score: 0.956
+----[EVAL] step 5000/8324 | precision: 0.963 | recall: 0.951 | f1 score: 0.957
+----[EVAL] step 6000/8324 | precision: 0.963 | recall: 0.951 | f1 score: 0.957
+----[EVAL] step 7000/8324 | precision: 0.961 | recall: 0.949 | f1 score: 0.955
+----[EVAL] step 8000/8324 | precision: 0.961 | recall: 0.95 | f1 score: 0.955
+====================================================================================================
+[FINAL] | precision: 0.96 | recall: 0.95 | f1 score: 0.955
+====================================================================================================
+2020-03-31 08:16:30,472 INFO common.py: eval success, time spent so far 64.3429 sec
+
+

@@ -8,7 +8,7 @@ from utils import show_metadata, show_dict_info
 
 from model_lstm_crf_baseline import BASELINE
 from model_bert_mlp import BERT_MLP
-from model_bert_mlp2 import BERT_NER
+from model_bert_mlp2 import BERT_MLP2
 from model_bert_crf2 import BERT_CRF2
 from model_bert_lstm_crf2 import BERT_LSTM_CRF2
 
@@ -126,10 +126,12 @@ def _train(mymodel, args, data_loader, train_dataset=None, eval_dataset=None, RE
             LOGGER.info(f'There is no such file in {old_model_path}, Rebuild model')
 
     ##TODO:
+    BATCH_SIZE = 16 if data_loader.sentence_max_len > 130 else 32
+    BATCH_SIZE = 8 if data_loader.sentence_max_len > 200 else BATCH_SIZE
     if use_cuda:
         train_param = {
-            'EPOCH': 15,         #45  TODO:15
-            'batch_size': 32,    #512   TODO:64
+            'EPOCH': 0,         #45  TODO:15
+            'batch_size': BATCH_SIZE,    #512   TODO:64
             'learning_rate_bert': 5e-5,
             'learning_rate_upper': 1e-3,  #TODO:
             'bert_finetune': True,
@@ -233,7 +235,7 @@ def main():
 
     data_loader = KGDataLoader(dataset, rebuild=False, temp_dir=args.result_dir)
     show_dict_info(data_loader)
-    # print(data_loader.entity_type_dict)
+    print(data_loader.sentence_max_len)
 
     ## Reload model
     model_params = {
@@ -253,19 +255,20 @@ def main():
     }
     
     ##TODO:
-    ### 使用自己写的CRF的模型，效果差不多，简化代码，先不用了, not used now
+    ### 使用自己写的CRF的模型，效果差不多，简化代码，先不用了, not used now========
     ## mymodel = BLSTM_CRF(model_params, show_param=True)   
     ## mymodel = BERT_LSTM_CRF(model_params, show_param=True) 
     ## mymodel = BERT_CRF(model_params, show_param=True)
+    ## mymodel = REL_BLSTM_CRF(model_params, show_param=True)  ##关系抽取模型，不使用
     
-    ### 主要使用对比模型
+    ### 主要使用对比模型============================
     # mymodel = BASELINE(model_params, show_param=True)    
-    mymodel = BERT_MLP(model_params, show_param=True)
-    # mymodel = BERT_NER(model_params, show_param=True)
+    # mymodel = BERT_MLP(model_params, show_param=True)
+    mymodel = BERT_MLP2(model_params, show_param=True)
     # mymodel = BERT_CRF2(model_params, show_param=True)
     # mymodel = BERT_LSTM_CRF2(model_params, show_param=True)
 
-    # mymodel = REL_BLSTM_CRF(model_params, show_param=True)
+    
 
     if args.use_cuda:
         train_dataset = dataset.train_dataset
@@ -290,7 +293,7 @@ def main():
 
     if args.mode == 'eval':
         LOGGER.info('===== Start Eval')
-        _eval(mymodel, args, data_loader, data_set=eval_dataset, RELOAD_MODEL='model_lr_0.01.p', use_cuda=args.use_cuda)
+        _eval(mymodel, args, data_loader, data_set=eval_dataset, RELOAD_MODEL='model_test.p', use_cuda=args.use_cuda)
 
     if args.mode == 'predict':
         LOGGER.info('===== Start Predict')

@@ -363,11 +363,11 @@ class BERT_Hierarchical(nn.Module):
         ## 保存预处理的文本，这样调参的时候可以直接读取，节约时间   *WARNING*
 
         ##TODO: 根据subject的平均数目以及句子的平均长度来设置self.weight的权重
-        avg_length = data_loader.metadata_['avg_sen_len']
-        avg_sub = train_data_mat_dict['total_sub']/len(train_data_mat_dict['y_rel_list'])
-        weight_1 = round(avg_length/avg_sub/10, 2)
+        # avg_length = data_loader.metadata_['avg_sen_len']
+        # avg_sub = train_data_mat_dict['total_sub']/len(train_data_mat_dict['y_rel_list'])
+        # weight_1 = round(avg_length/avg_sub/10, 2)
         # self.weight[1] = weight_1
-        print(self.weight)
+        # print(self.weight)
 
         # print('total sub:', train_data_mat_dict['total_sub'])
         # print('total sentence: ', len(train_data_mat_dict['y_rel_list']))
@@ -411,8 +411,8 @@ class BERT_Hierarchical(nn.Module):
             temp_param = self.backup_param()
             if use_ema:
                 ema.backup_oldema()
-            print('before train bias', self.embed2sub.bias)
-            print('before ema bias', list(ema.shadow.values())[200], list(ema.shadow.keys())[200])
+            # print('before train bias', self.embed2sub.bias)
+            # print('before ema bias', list(ema.shadow.values())[200], list(ema.shadow.keys())[200])
             print(optimizer.state_dict()['param_groups'][0]['lr'], optimizer.state_dict()['param_groups'][1]['lr'])
 
             for cnt, data_batch in enumerate(data_generator):
@@ -440,8 +440,15 @@ class BERT_Hierarchical(nn.Module):
 
                 if (cnt+1) % visualize_length == 0:
                     loss_cur = loss / visualize_length
-                    log(f'[TRAIN] step: {(cnt+1)*BATCH_SIZE}/{all_cnt} | loss: {loss_cur:.4f}', 1)
-                    print('self.alpha: ', self.weight)
+                    loss_cur = loss_cur.cpu().item()
+                    log(f'[TRAIN] step: {(cnt+1)*BATCH_SIZE}/{all_cnt} | loss: {loss_cur:.4f} | type: {type(loss_cur)}', 1)
+                    # print('self.alpha: ', self.weight)
+
+                    if loss_cur == np.nan:  ##TODO: 用来解决loss是nan的问题，有少数情况下会出现
+                        self.restore_param(temp_param)
+                        ema.return_oldema()
+                        print('loss is nan, restore parameters')
+                        continue
                     loss = 0.0
 
             if use_ema:
@@ -450,7 +457,7 @@ class BERT_Hierarchical(nn.Module):
 
             temp_score = self.eval_model(data_loader, data_set=eval_dataset, hyper_param=evel_param)
             score_record.append(temp_score)
-            # scheduler.step()   #TODO:
+            
             
             if temp_score[2] > max_score:
                 max_score = temp_score[2]

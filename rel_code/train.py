@@ -125,7 +125,7 @@ def _train(mymodel, args, data_loader, train_dataset=None, eval_dataset=None, RE
     BATCH_SIZE = 8 if data_loader.sentence_max_len > 200 else 16
     if use_cuda:
         train_param = {
-            'EPOCH': 20,         #45  TODO:15
+            'EPOCH': 30,         #45  TODO:15
             'batch_size': BATCH_SIZE,    #512   TODO:64
             'learning_rate_bert': 5e-5,  
             'learning_rate_upper': 1e-3,  #TODO:1e-3

@@ -13,7 +13,8 @@ from torch.optim.lr_scheduler import LambdaLR
 from tricks import EMA
 
 def my_lr_lambda(epoch):
-    return 1/(1+0.05*epoch)
+    # return 1/(1+0.05*epoch)
+    return 0.5**(epoch)
 
 class MODEL_TEMP(nn.Module):
     def __init__(self, config={}, show_param=False):
@@ -179,8 +180,8 @@ class MODEL_TEMP(nn.Module):
             temp_param = self.backup_param()
             if use_ema:
                 ema.backup_oldema()
-            # print('before train bias', self.embed2sub.bias)
-            # print('before ema bias', list(ema.shadow.values())[200], list(ema.shadow.keys())[200])
+            # print('before train bias', self.model.classifier.bias[:3])
+            # print('before ema bias', list(ema.shadow.values())[200][:3], list(ema.shadow.keys())[200])
             print(optimizer.state_dict()['param_groups'][0]['lr'], optimizer.state_dict()['param_groups'][1]['lr'])
 
             for cnt, data_batch in enumerate(data_generator):
@@ -212,7 +213,7 @@ class MODEL_TEMP(nn.Module):
             score_record.append(temp_score)
             # scheduler.step()   #TODO:
             
-            if temp_score[2] > max_score:
+            if temp_score[2] >= max_score:
                 max_score = temp_score[2]
                 save_path = os.path.join(result_dir, model_name)
                 self.save_model(save_path)
@@ -225,8 +226,10 @@ class MODEL_TEMP(nn.Module):
             ##TODO:
             elif temp_score[2] < max_score:
                 ###回滚到这个epoch之前的参数
+                
                 self.restore_param(temp_param)
-                ema.return_oldema()
+                if use_ema:
+                    ema.return_oldema()
                 scheduler.step()
                 print(optimizer.state_dict()['param_groups'][0]['lr'], optimizer.state_dict()['param_groups'][1]['lr'])
 
